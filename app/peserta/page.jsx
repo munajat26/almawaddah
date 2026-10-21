@@ -39,7 +39,7 @@ export default function Peserta() {
         {err && <Alert>{err}</Alert>}
         {!data && !err && (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[0, 1, 2].map((i) => <div key={i} className="h-60 animate-pulse rounded-[28px] bg-black/[0.05]" />)}
+            {[0, 1, 2].map((i) => <div key={i} className="h-60 animate-pulse rounded-[28px] bg-ink/[0.05]" />)}
           </div>
         )}
         {data && tampil.length === 0 && (
@@ -64,7 +64,7 @@ export default function Peserta() {
                 <div className="flex justify-between gap-4"><dt className="text-muted">Pekerjaan</dt><dd className="text-right font-medium">{p.pekerjaan}</dd></div>
                 <div className="flex justify-between gap-4"><dt className="text-muted">Status</dt><dd className="text-right font-medium">{p.statusNikah}</dd></div>
               </dl>
-              <p className="mt-6 text-sm font-semibold text-gold-700 group-hover:underline">Baca selengkapnya</p>
+              <p className="mt-6 text-sm font-semibold text-gold-ink group-hover:underline">Baca selengkapnya</p>
             </Link>
           ))}
         </div>

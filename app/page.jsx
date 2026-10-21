@@ -61,7 +61,7 @@ export default function Home() {
                   <div key={k} className="flex justify-between gap-4"><dt className="text-muted">{k}</dt><dd className="font-medium">{v}</dd></div>
                 ))}
               </dl>
-              <p className="mt-5 flex items-center gap-2 rounded-xl bg-jade-900/[0.06] px-3 py-2 text-xs text-jade-800">
+              <p className="mt-5 flex items-center gap-2 rounded-xl bg-jade-900/[0.06] px-3 py-2 text-xs text-brand">
                 <Lock className="h-3.5 w-3.5" /> Nama, foto, dan kontak dijaga admin
               </p>
             </div>
@@ -74,7 +74,7 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-5 py-24">
         <h2 className="max-w-2xl text-4xl font-semibold leading-[1.08] tracking-[-0.035em] sm:text-5xl">Dirancang untuk menjaga adab dan privasi.</h2>
         <div className="mt-12 grid gap-4 md:grid-cols-6">
-          <div className="relative overflow-hidden rounded-[32px] bg-jade-950 p-8 text-white md:col-span-4 md:p-10">
+          <div className="relative overflow-hidden rounded-[32px] bg-jade-950 p-8 text-white md:col-span-4 md:p-10 dark:ring-1 dark:ring-white/10">
             <div className="pattern-gold absolute inset-0 opacity-[0.12]" />
             <div className="relative">
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gold-300/15 text-gold-300 ring-1 ring-gold-300/30"><Shield /></span>
@@ -94,19 +94,19 @@ export default function Home() {
           </div>
 
           <div className="panel p-8 md:col-span-2">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-jade-50 text-jade-800"><Users /></span>
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-soft text-brand"><Users /></span>
             <h3 className="mt-6 text-2xl font-semibold tracking-[-0.03em]">Wali ikut mendampingi.</h3>
             <p className="mt-2 leading-relaxed text-muted">Setiap peserta wajib mencantumkan wali, sehingga proses berjalan sesuai adab.</p>
           </div>
 
           <div className="panel p-8 md:col-span-2">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-jade-50 text-jade-800"><Chat /></span>
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-soft text-brand"><Chat /></span>
             <h3 className="mt-6 text-2xl font-semibold tracking-[-0.03em]">Admin sebagai perantara.</h3>
             <p className="mt-2 leading-relaxed text-muted">Tidak ada pesan langsung antar peserta. Semua pengajuan melalui admin.</p>
           </div>
 
-          <div className="rounded-[32px] bg-linear-to-br from-gold-200/70 via-gold-200/30 to-white p-8 ring-1 ring-gold-400/30 md:col-span-4 md:p-10">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/80 text-gold-700 ring-1 ring-gold-400/30"><Badge /></span>
+          <div className="rounded-[32px] bg-linear-to-br from-gold-200/70 via-gold-200/30 to-surface p-8 ring-1 ring-gold-400/30 dark:from-gold-400/20 dark:via-gold-400/[0.07] md:col-span-4 md:p-10">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-surface/80 text-gold-ink ring-1 ring-gold-400/30"><Badge /></span>
             <h3 className="mt-6 text-3xl font-semibold tracking-[-0.03em]">Setiap profil diverifikasi.</h3>
             <p className="mt-3 max-w-lg leading-relaxed text-ink/70">Admin memeriksa kelengkapan data dan foto sebelum profil ditayangkan, agar yang Anda temui adalah peserta yang serius.</p>
           </div>
@@ -128,7 +128,7 @@ export default function Home() {
       </section>
 
       {/* Ayat */}
-      <section className="relative overflow-hidden bg-jade-950 py-24 text-center">
+      <section className="relative overflow-hidden bg-jade-950 py-24 text-center dark:border-y dark:border-white/10">
         <div className="pattern-gold fade-radial absolute inset-0 opacity-[0.16]" />
         <div className="relative mx-auto max-w-3xl px-5">
           <p lang="ar" dir="rtl" className="font-arabic text-4xl leading-[1.9] text-gold-300 sm:text-5xl">
@@ -149,7 +149,7 @@ export default function Home() {
             <details key={q} className="group py-6">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[17px] font-medium tracking-[-0.01em]">
                 {q}
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-jade-50 text-jade-800 transition-transform group-open:rotate-45"><Plus className="h-4 w-4" /></span>
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-soft text-brand transition-transform group-open:rotate-45"><Plus className="h-4 w-4" /></span>
               </summary>
               <p className="mt-3 max-w-xl leading-relaxed text-muted">{a}</p>
             </details>

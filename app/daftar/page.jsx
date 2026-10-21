@@ -79,12 +79,12 @@ export default function Daftar() {
         <h1 className="mt-6 text-4xl font-semibold tracking-[-0.035em]">Pendaftaran terkirim</h1>
         <p className="mt-3 text-muted">Simpan kode peserta Anda. Kode ini diperlukan saat mengajukan ta’aruf.</p>
         <div className="panel mx-auto mt-8 px-8 py-7 ring-1 ring-gold-400/40">
-          <p className="text-4xl font-semibold tracking-[0.08em] text-jade-900">{kode}</p>
+          <p className="text-4xl font-semibold tracking-[0.08em] text-brand-strong">{kode}</p>
           <button onClick={salinKode} className="btn-ghost mt-5 !h-10">{salin ? 'Tersalin' : 'Salin kode'}</button>
         </div>
         <p className="mt-8 text-sm leading-relaxed text-muted">
           Admin akan memverifikasi data Anda dalam 1 sampai 3 hari kerja. Pertanyaan? Hubungi admin lewat{' '}
-          <a className="font-semibold text-jade-800 underline underline-offset-2" href={`https://wa.me/${SITE.waAdmin}?text=${encodeURIComponent('Assalamualaikum, kode peserta saya ' + kode)}`}>WhatsApp</a>.
+          <a className="font-semibold text-brand underline underline-offset-2" href={`https://wa.me/${SITE.waAdmin}?text=${encodeURIComponent('Assalamualaikum, kode peserta saya ' + kode)}`}>WhatsApp</a>.
         </p>
         <Link href="/" className="btn-primary mt-8">Kembali ke beranda</Link>
       </div>
@@ -99,7 +99,7 @@ export default function Daftar() {
       <ol className="mt-10 grid grid-cols-3 gap-2" aria-label="Langkah pendaftaran">
         {LANGKAH.map(([l], i) => (
           <li key={l}>
-            <div className={`h-1.5 rounded-full transition-colors ${i <= step ? 'bg-linear-to-r from-gold-400 to-gold-300' : 'bg-black/10'}`} />
+            <div className={`h-1.5 rounded-full transition-colors ${i <= step ? 'bg-linear-to-r from-gold-400 to-gold-300' : 'bg-ink/10'}`} />
             <p className={`mt-2 text-xs sm:text-sm ${i === step ? 'font-semibold text-ink' : 'text-muted'}`}>{l}</p>
           </li>
         ))}
@@ -117,7 +117,7 @@ export default function Daftar() {
               <div className="grid grid-cols-2 gap-3">
                 {['Ikhwan', 'Akhwat'].map((g) => (
                   <button type="button" key={g} onClick={() => setF({ ...f, gender: g })} aria-pressed={f.gender === g}
-                    className={`h-14 rounded-2xl text-[15px] font-medium transition-all ${f.gender === g ? 'bg-linear-to-b from-jade-700 to-jade-900 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_8px_20px_-8px_rgba(7,58,51,.7)]' : 'bg-white ring-1 ring-black/10 hover:ring-jade-700'}`}>
+                    className={`h-14 rounded-2xl text-[15px] font-medium transition-all ${f.gender === g ? 'bg-linear-to-b from-jade-700 to-jade-900 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_8px_20px_-8px_rgba(7,58,51,.7)]' : 'bg-surface ring-1 ring-ink/15 hover:ring-jade-700'}`}>
                     {g}
                   </button>
                 ))}
@@ -161,7 +161,7 @@ export default function Daftar() {
                 {foto
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={`data:image/jpeg;base64,${foto.data}`} alt="Pratinjau foto" className="h-16 w-16 rounded-full object-cover ring-2 ring-gold-400" />
-                  : <span className="grid h-16 w-16 place-items-center rounded-full bg-white text-gold-700 ring-1 ring-gold-400/40"><Upload className="h-6 w-6" /></span>}
+                  : <span className="grid h-16 w-16 place-items-center rounded-full bg-surface text-gold-ink ring-1 ring-gold-400/40"><Upload className="h-6 w-6" /></span>}
                 <span className="text-sm">
                   <span className="block font-medium">{foto ? 'Foto siap diunggah. Ketuk untuk mengganti.' : 'Pilih foto'}</span>
                   <span className="mt-0.5 block text-muted">Hanya dilihat admin. Wajah jelas, berpakaian syar’i.</span>

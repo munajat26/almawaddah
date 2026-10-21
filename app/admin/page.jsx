@@ -7,12 +7,12 @@ import Logo from '../../components/Logo';
 const ST_P = ['Menunggu', 'Disetujui', 'Ditolak', 'Menikah'];
 const ST_T = ['Menunggu', 'Diproses', 'Diterima', 'Ditolak'];
 const WARNA = {
-  Menunggu: 'bg-amber-50 text-amber-800 ring-amber-200',
-  Disetujui: 'bg-jade-50 text-jade-800 ring-jade-100',
-  Diproses: 'bg-sky-50 text-sky-800 ring-sky-200',
-  Diterima: 'bg-jade-50 text-jade-800 ring-jade-100',
-  Ditolak: 'bg-rose-50 text-rose-800 ring-rose-200',
-  Menikah: 'bg-gold-200/60 text-gold-700 ring-gold-400/40',
+  Menunggu: 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/25',
+  Disetujui: 'bg-brand-soft text-brand ring-brand-ring',
+  Diproses: 'bg-sky-50 text-sky-800 ring-sky-200 dark:bg-sky-400/10 dark:text-sky-300 dark:ring-sky-400/25',
+  Diterima: 'bg-brand-soft text-brand ring-brand-ring',
+  Ditolak: 'bg-rose-50 text-rose-800 ring-rose-200 dark:bg-rose-400/10 dark:text-rose-300 dark:ring-rose-400/25',
+  Menikah: 'bg-gold-200/60 text-gold-ink ring-gold-400/40 dark:bg-gold-400/15',
 };
 const Badge = ({ s }) => <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${WARNA[s] || ''}`}>{s}</span>;
 
@@ -94,7 +94,7 @@ export default function Admin() {
       <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
         {[['Menunggu verifikasi', hitung('Menunggu')], ['Peserta aktif', hitung('Disetujui')], ['Ta’aruf berjalan', taaruf.filter((t) => t.status === 'Menunggu' || t.status === 'Diproses').length], ['Menikah', hitung('Menikah')]].map(([k, v]) => (
           <div key={k} className="panel p-6">
-            <p className="text-4xl font-semibold tracking-[-0.04em] text-jade-900">{v}</p>
+            <p className="text-4xl font-semibold tracking-[-0.04em] text-brand-strong">{v}</p>
             <p className="mt-1 text-sm text-muted">{k}</p>
           </div>
         ))}
@@ -111,12 +111,12 @@ export default function Admin() {
             </tr></thead>
             <tbody>
               {rows.map((p) => (
-                <tr key={p.id} className="border-b border-hair last:border-0 hover:bg-jade-50/50">
+                <tr key={p.id} className="border-b border-hair last:border-0 hover:bg-brand-soft">
                   <td className="px-6 py-4 font-mono text-xs text-muted">{p.id}</td>
                   <td className="px-6 py-4 font-medium">{p.nama} <span className="font-normal text-muted">({p.gender})</span></td>
                   <td className="px-6 py-4">{p.usia}, {p.domisili}</td>
                   <td className="px-6 py-4"><Badge s={p.status} /></td>
-                  <td className="px-6 py-4 text-right"><button className="font-semibold text-jade-800 hover:underline" onClick={() => buka(p)}>Periksa</button></td>
+                  <td className="px-6 py-4 text-right"><button className="font-semibold text-brand hover:underline" onClick={() => buka(p)}>Periksa</button></td>
                 </tr>
               ))}
               {!rows.length && <tr><td colSpan={5} className="p-10 text-center text-muted">Tidak ada data pada status ini.</td></tr>}
@@ -147,7 +147,7 @@ export default function Admin() {
 
       {sel && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-jade-950/40 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setSel(null)}>
-          <div className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-white shadow-lift" onClick={(e) => e.stopPropagation()}>
+          <div className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-surface shadow-lift" onClick={(e) => e.stopPropagation()}>
             {/* Bilah jendela ala macOS: titik merah menutup jendela */}
             <div className="flex items-center gap-2 border-b border-hair px-5 py-3.5">
               <button onClick={() => setSel(null)} aria-label="Tutup" className="h-3 w-3 rounded-full bg-[#ff5f57] ring-1 ring-black/10" />

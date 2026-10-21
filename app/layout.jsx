@@ -11,11 +11,20 @@ export const metadata = {
   title: { default: `${SITE.nama} — ${SITE.tagline}`, template: `%s — ${SITE.nama}` },
   description: SITE.deskripsi,
 };
-export const viewport = { themeColor: '#f4f5f4' };
+export const viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f4f5f4' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a1110' },
+  ],
+};
+
+// Terapkan tema sebelum render pertama agar tidak berkedip.
+const THEME_SCRIPT = `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`;
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id" className={`${inter.variable} ${amiri.variable}`}>
+    <html lang="id" suppressHydrationWarning className={`${inter.variable} ${amiri.variable}`}>
+      <head><script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} /></head>
       <body className="flex min-h-dvh flex-col">
         <Navbar />
         <main className="flex-1">{children}</main>
