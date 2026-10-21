@@ -22,7 +22,7 @@ export const metadata = {
     title: `${SITE.nama} — ${SITE.tagline}`,
     description: SITE.deskripsi,
   },
-  twitter: { card: 'summary_large_image', title: `${SITE.nama} — ${SITE.tagline}`, description: SITE.deskripsi },
+  twitter: { card: 'summary', title: `${SITE.nama} — ${SITE.tagline}`, description: SITE.deskripsi },
 };
 export const viewport = {
   themeColor: [
