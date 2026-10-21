@@ -7,9 +7,22 @@ import { SITE } from '../lib/site';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const amiri = Amiri({ subsets: ['arabic', 'latin'], weight: ['400', '700'], variable: '--font-amiri' });
 
+// Alamat situs untuk gambar pratinjau (WhatsApp, dll). Isi NEXT_PUBLIC_SITE_URL dengan domain Anda.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
+  || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000');
+
 export const metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: `${SITE.nama} — ${SITE.tagline}`, template: `%s — ${SITE.nama}` },
   description: SITE.deskripsi,
+  openGraph: {
+    type: 'website',
+    locale: 'id_ID',
+    siteName: SITE.nama,
+    title: `${SITE.nama} — ${SITE.tagline}`,
+    description: SITE.deskripsi,
+  },
+  twitter: { card: 'summary_large_image', title: `${SITE.nama} — ${SITE.tagline}`, description: SITE.deskripsi },
 };
 export const viewport = {
   themeColor: [
