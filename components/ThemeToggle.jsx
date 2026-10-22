@@ -26,7 +26,7 @@ export default function ThemeToggle() {
 
   return (
     <button type="button" onClick={() => apply(!dark, true)} aria-label={dark ? 'Beralih ke mode terang' : 'Beralih ke mode gelap'} title={dark ? 'Mode terang' : 'Mode gelap'}
-      className="grid h-10 w-10 place-items-center rounded-full text-ink/80 transition-colors hover:bg-ink/5">
+      className="grid h-11 w-11 place-items-center rounded-full text-ink/80 transition-colors hover:bg-ink/5">
       {dark ? (
         <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
           <circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />

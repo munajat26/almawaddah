@@ -1,22 +1,80 @@
 /**
  * Backend Biro Jodoh Syar'i — Google Apps Script
  *
+ * Membaca dan menulis langsung ke sheet jawaban yang sudah ada (Ikhwan dan Akhwat),
+ * dikenali dari teks header kolomnya. Kolom lama tidak diubah. Hanya 3 kolom admin
+ * ditambahkan di ujung kanan: "Kode", "Status Verifikasi", "Catatan Admin".
+ *
  * Script Properties (Project Settings > Script properties):
- *   SS_ID           : ID Google Spreadsheet
- *   FOLDER_ID       : ID folder Google Drive untuk foto (biarkan privat)
+ *   SS_ID           : ID Google Spreadsheet utama (tab Taaruf dibuat di sini; juga dipakai
+ *                     untuk tab Ikhwan/Akhwat bila tidak diisi ID terpisah di bawah)
+ *   SS_ID_IKHWAN    : (opsional) ID spreadsheet jawaban Google Form ikhwan, bila terpisah
+ *   SS_ID_AKHWAT    : (opsional) ID spreadsheet jawaban Google Form akhwat, bila terpisah
+ *   SHEET_IKHWAN    : nama tab data ikhwan   (default: Ikhwan)
+ *   SHEET_AKHWAT    : nama tab data akhwat   (default: Akhwat)
  *   API_KEY         : kunci acak panjang, sama dengan GAS_API_KEY di Next.js
  *   ADMIN_PASSWORD  : kata sandi panel admin
  *
  * Deploy: Deploy > New deployment > Web app
  *   Execute as: Me | Who has access: Anyone
- * Jalankan fungsi setup() sekali untuk membuat sheet.
+ * Langkah awal: jalankan setup(), lalu migrasi() sekali.
  */
 
-const SHEETS = {
-  Peserta: ['id', 'createdAt', 'status', 'nama', 'gender', 'tglLahir', 'tinggi', 'pendidikan', 'pekerjaan', 'domisili',
-    'statusNikah', 'jmlAnak', 'hafalan', 'pemahaman', 'visi', 'kriteria', 'wali', 'waliWa', 'wa', 'email', 'fotoId', 'catatanAdmin'],
-  Taaruf: ['id', 'createdAt', 'dari', 'kepada', 'pesan', 'status', 'catatanAdmin'],
+// Status untuk data lama saat migrasi() dijalankan. Ganti ke 'Menunggu'
+// bila semua data lama ingin diperiksa ulang oleh admin sebelum tampil.
+const STATUS_DATA_LAMA = 'Disetujui';
+
+// Teks header kolom persis seperti di spreadsheet jawaban.
+const H_CIRI = 'Ciri fisik (sebatas yang diizinkan diketahui oleh panitia dan kandidat jodoh nantinya)';
+const H_UNGGUL = 'Ceritakan tentang keunggulan diri anda (sebatas yang diizinkan diketahui oleh panitia dan kandidat jodoh nantinya)';
+const H_KURANG = 'Ceritakan tentang kekurangan diri anda (sebatas yang diizinkan diketahui oleh panitia dan kandidat jodoh nantinya)';
+const H_UMUM = {
+  untuk: 'Mendaftar untuk sendiri atau orang lain?',
+  wa: 'Nomor Whatsapp yang bisa dihubungi',
+  tglLahir: 'Tanggal Lahir',
+  berat: 'Berat badan',
+  tinggi: 'Tinggi badan',
+  suku: 'Suku',
+  status: 'Status',
+  domAsal: 'Domisili asal',
+  domSekarang: 'Domisili sekarang',
+  pendidikan: 'Pendidikan',
+  pekerjaan: 'Pekerjaan/kegiatan',
+  izin: 'Izin menikah dari orangtua/wali',
+  ciri: H_CIRI,
+  unggul: H_UNGGUL,
+  kurang: H_KURANG,
+  kegiatan: 'Dimanakah anda sering mengikuti kegiatan keagamaan (pengajian dan lainnya)?',
+  ormas: 'Apakah anda mengikuti ormas tertentu?',
+  ustadz: 'Sebutkan nama-nama ustadz favorit atau yang sering anda ikuti ceramah atau kajiannya!',
 };
+const HEADER = {
+  Ikhwan: Object.assign({}, H_UMUM, {
+    salaf: 'Salaf/Mengaji?',
+    penghasilan: 'Income/Pemasukan Bulanan',
+    bedaPulau: 'Bersedia menikah beda pulau/provinsi/kabupaten?',
+    tinggal: 'Setelah menikah apakah bersedia ikut tinggal bersama istri?',
+    pasangan: 'Apakah kandidat calon istri harus lajang (belum menikah)? boleh dicentang lebih dari satu',
+    kriteria: 'Kriteria istri yang anda perlukan (ciri fisik, keagamaan, ekonomi, dll)',
+    nama: 'Nama Lengkap Sesuai KTP bukan kunyah (Untuk Ikhwan)',
+  }),
+  Akhwat: Object.assign({}, H_UMUM, {
+    nomor: 'Nomor',
+    salaf: 'Salaf/Sudah Mengaji',
+    penghasilan: 'Berapa perkiraan kebutuhan nafkah anda (rupiah)?',
+    bedaPulau: 'Bersedia menikah beda pulau?',
+    bedaProv: 'Bersedia menikah beda provinsi?',
+    bedaKab: 'Bersedia menikah beda kabupaten?',
+    tinggal: 'Setelah menikah apakah bersedia ikut tinggal bersama suami?',
+    pasangan: 'Apakah kandidat calon suami harus lajang (belum menikah)? boleh dicentang lebih dari satu',
+    kriteria: 'Kriteria suami yang anda perlukan (ciri fisik, keagamaan, pendidikan, ekonomi, dll)',
+    nama: 'Nama Lengkap Sesuai KTP bukan kunyah (Untuk Akhwat)',
+  }),
+};
+const KOLOM_ADMIN = { kode: 'Kode', verif: 'Status Verifikasi', catatan: 'Catatan Admin' };
+const PREFIX = { Ikhwan: 'IK', Akhwat: 'AK' };
+
+const TAARUF_HDR = ['id', 'createdAt', 'dari', 'kepada', 'pesan', 'status', 'catatanAdmin'];
 const STATUS_PESERTA = ['Menunggu', 'Disetujui', 'Ditolak', 'Menikah'];
 const STATUS_TAARUF = ['Menunggu', 'Diproses', 'Diterima', 'Ditolak'];
 
@@ -25,54 +83,150 @@ function prop_(k) { return PropertiesService.getScriptProperties().getProperty(k
 function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function cl_(v, n) { return String(v == null ? '' : v).trim().slice(0, n || 200); }
 function digits_(v) { return String(v || '').replace(/\D/g, ''); }
+function norm_(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 function withLock_(fn) {
   const l = LockService.getScriptLock();
   l.waitLock(20000);
   try { return fn(); } finally { l.releaseLock(); }
 }
-function sheet_(name) {
-  const ss = SpreadsheetApp.openById(prop_('SS_ID'));
-  let sh = ss.getSheetByName(name);
-  if (!sh) {
-    sh = ss.insertSheet(name);
-    sh.appendRow(SHEETS[name]);
-    sh.setFrozenRows(1);
-    sh.getRange(1, 1, sh.getMaxRows(), SHEETS[name].length).setNumberFormat('@'); // teks polos
+function ss_(g) { // g opsional: tiap tab boleh berada di spreadsheet berbeda (SS_ID_IKHWAN / SS_ID_AKHWAT)
+  const id = (g === 'Ikhwan' && prop_('SS_ID_IKHWAN')) || (g === 'Akhwat' && prop_('SS_ID_AKHWAT')) || prop_('SS_ID');
+  if (!id) throw new Error('Script property SS_ID belum diisi.');
+  return SpreadsheetApp.openById(id);
+}
+
+// Cari kolom berdasarkan teks header (abaikan huruf besar/kecil, spasi, tanda baca).
+function cari_(headers, target) {
+  const t = norm_(target);
+  const hn = headers.map(norm_);
+  let i = hn.indexOf(t);
+  if (i >= 0) return i;
+  if (t.length >= 25) { // toleran bila teks header diubah sedikit di bagian akhir
+    const p = t.slice(0, 25);
+    for (i = 0; i < hn.length; i++) if (hn[i].length >= 25 && hn[i].indexOf(p) === 0) return i;
   }
-  return sh;
+  return -1;
 }
-function rows_(name) {
-  const v = sheet_(name).getDataRange().getValues();
-  const h = v.shift();
-  return v.map(function (r, i) {
-    const o = { _row: i + 2 };
-    h.forEach(function (k, j) { o[k] = r[j]; });
-    return o;
+
+// Info sheet: objek sheet, daftar header, dan peta kunci -> indeks kolom (mulai 0).
+const INFO_ = {};
+function info_(g) {
+  if (INFO_[g]) return INFO_[g];
+  const nama = prop_(g === 'Ikhwan' ? 'SHEET_IKHWAN' : 'SHEET_AKHWAT') || g;
+  const ss = ss_(g);
+  let sh = ss.getSheetByName(nama);
+  if (!sh) { // sheet belum ada: buat dengan header yang sama seperti form
+    sh = ss.insertSheet(nama);
+    sh.appendRow(['Timestamp'].concat(Object.keys(HEADER[g]).map(function (k) { return HEADER[g][k]; })));
+    sh.setFrozenRows(1);
+  }
+  const headers = sh.getRange(1, 1, 1, Math.max(1, sh.getLastColumn())).getValues()[0].map(String);
+  Object.keys(KOLOM_ADMIN).forEach(function (k) { // tambah kolom admin bila belum ada
+    if (cari_(headers, KOLOM_ADMIN[k]) < 0) {
+      headers.push(KOLOM_ADMIN[k]);
+      sh.getRange(1, headers.length).setValue(KOLOM_ADMIN[k]);
+    }
   });
+  const col = {};
+  Object.keys(HEADER[g]).forEach(function (k) { col[k] = cari_(headers, HEADER[g][k]); });
+  Object.keys(KOLOM_ADMIN).forEach(function (k) { col[k] = cari_(headers, KOLOM_ADMIN[k]); });
+  col.waktu = headers.map(norm_).indexOf('timestamp');
+  if (col.waktu < 0) col.waktu = headers.map(norm_).indexOf('capwaktu');
+  const hilang = Object.keys(HEADER[g]).filter(function (k) { return col[k] < 0 && k !== 'nomor' && k !== 'salaf'; });
+  if (hilang.length) throw new Error('Header sheet ' + nama + ' tidak ditemukan untuk: ' + hilang.join(', '));
+  return (INFO_[g] = { sh: sh, headers: headers, col: col });
 }
-function setCell_(name, row, key, val) {
-  sheet_(name).getRange(row, SHEETS[name].indexOf(key) + 1).setValue(val);
-}
-function age_(s) {
+
+function parseDate_(v) {
+  if (v instanceof Date) return isNaN(v) ? null : v;
+  const s = String(v || '').trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);
+  if (m) { // Google Form menampilkan MM/DD/YYYY; bila angka pertama > 12 pasti DD/MM/YYYY
+    const a = +m[1], c = +m[2];
+    return a > 12 ? new Date(+m[3], c - 1, a) : new Date(+m[3], a - 1, c);
+  }
   const d = new Date(s);
-  if (isNaN(d)) return '';
-  const n = new Date();
-  let a = n.getFullYear() - d.getFullYear();
-  const m = n.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && n.getDate() < d.getDate())) a--;
-  return a;
+  return isNaN(d) ? null : d;
 }
-function inisial_(nama) {
-  return String(nama).trim().split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('.') + '.';
+// Usia dengan satu angka desimal, misalnya 31.7
+function usia_(v) {
+  const d = parseDate_(v);
+  if (!d) return '';
+  const y = (new Date().getTime() - d.getTime()) / (365.25 * 86400000);
+  return y < 0 || y > 120 ? '' : Math.round(y * 10) / 10;
 }
-// Profil publik: tanpa nama lengkap, kontak, wali, dan foto.
+
+// Semua baris sebuah sheet sebagai objek dengan kunci baku (nama, wa, tglLahir, ...).
+function rows_(g) {
+  const I = info_(g);
+  const v = I.sh.getDataRange().getValues();
+  const out = [];
+  for (let i = 1; i < v.length; i++) {
+    const r = v[i];
+    if (I.col.nama >= 0 && !String(r[I.col.nama]).trim()) continue; // baris kosong
+    const o = { gender: g, _row: i + 1 };
+    Object.keys(I.col).forEach(function (k) {
+      if (I.col[k] >= 0) o[k] = r[I.col[k]];
+    });
+    Object.keys(o).forEach(function (k) { if (typeof o[k] === 'string') o[k] = o[k].trim(); });
+    o.kode = String(o.kode || '');
+    o.verif = String(o.verif || '');
+    out.push(o);
+  }
+  return out;
+}
+function semua_() { return rows_('Ikhwan').concat(rows_('Akhwat')); }
+
+function setCell_(p, key, val) {
+  const I = info_(p.gender);
+  I.sh.getRange(p._row, I.col[key] + 1).setValue(val);
+}
+
+// Beri Kode dan Status Verifikasi pada baris yang belum punya (data lama atau kiriman Google Form).
+function lengkapi_(g, statusAwal) {
+  const I = info_(g);
+  const last = I.sh.getLastRow();
+  if (last < 2) return 0;
+  const n = last - 1;
+  const rg = function (k) { return I.sh.getRange(2, I.col[k] + 1, n, 1); };
+  const nama = rg('nama').getValues(), kode = rg('kode').getValues(), verif = rg('verif').getValues();
+  const nomor = I.col.nomor >= 0 ? rg('nomor').getValues() : null;
+  const dipakai = {}; let maks = 0;
+  kode.forEach(function (r) {
+    const m = String(r[0]).match(/(\d+)$/);
+    if (m) { dipakai[+m[1]] = true; maks = Math.max(maks, +m[1]); }
+  });
+  let ubah = 0;
+  for (let i = 0; i < n; i++) {
+    if (!String(nama[i][0]).trim()) continue;
+    if (!String(kode[i][0]).trim()) {
+      let no = nomor && /^\d+$/.test(String(nomor[i][0]).trim()) ? +nomor[i][0] : i + 1;
+      if (dipakai[no]) no = ++maks;
+      dipakai[no] = true; maks = Math.max(maks, no);
+      kode[i][0] = PREFIX[g] + '-' + ('000' + no).slice(-3);
+      ubah++;
+    }
+    if (!String(verif[i][0]).trim()) { verif[i][0] = statusAwal; ubah++; }
+  }
+  if (ubah) { rg('kode').setValues(kode); rg('verif').setValues(verif); }
+  return ubah;
+}
+
+// Profil publik: hanya info yang boleh tampil. Tanpa nama, WhatsApp, tanggal lahir,
+// domisili asal, izin wali, dan keterangan pendaftar.
 function publik_(p) {
   return {
-    id: p.id, inisial: inisial_(p.nama), gender: p.gender, usia: age_(p.tglLahir), tinggi: p.tinggi,
-    pendidikan: p.pendidikan, pekerjaan: p.pekerjaan, domisili: p.domisili, statusNikah: p.statusNikah,
-    jmlAnak: p.jmlAnak, hafalan: p.hafalan, pemahaman: p.pemahaman, visi: p.visi, kriteria: p.kriteria,
+    id: p.kode, gender: p.gender, status: p.status, usia: usia_(p.tglLahir), suku: p.suku,
+    domSekarang: p.domSekarang, tinggi: p.tinggi, berat: p.berat, pendidikan: p.pendidikan,
+    ciri: p.ciri, pekerjaan: p.pekerjaan, penghasilan: p.penghasilan,
+    bedaPulau: p.bedaPulau, bedaProv: p.bedaProv || '', bedaKab: p.bedaKab || '',
+    unggul: p.unggul, kurang: p.kurang, kegiatan: p.kegiatan, ustadz: p.ustadz, ormas: p.ormas,
+    pasangan: p.pasangan, kriteria: p.kriteria,
   };
 }
+function aktif_(p) { return p.kode && p.verif === 'Disetujui'; }
 function cekAdmin_(token) {
   if (!token || !CacheService.getScriptCache().get('adm_' + token)) throw new Error('Sesi admin berakhir. Silakan masuk lagi.');
 }
@@ -94,74 +248,127 @@ function doPost(e) {
 
 const ROUTES = {
   list: list, get: get, register: register, taaruf: taaruf,
-  adminLogin: adminLogin, adminList: adminList, adminUpdate: adminUpdate, adminTaaruf: adminTaaruf, adminPhoto: adminPhoto,
+  adminLogin: adminLogin, adminList: adminList, adminUpdate: adminUpdate, adminTaaruf: adminTaaruf,
 };
 
-function setup() { Object.keys(SHEETS).forEach(sheet_); }
+/* ---------- inisialisasi (jalankan sekali dari editor) ---------- */
+function setup() {
+  info_('Ikhwan'); info_('Akhwat'); // pastikan kolom admin ada
+  taarufSheet_();
+}
+// Beri Kode dan status pada semua data lama.
+function migrasi() {
+  withLock_(function () {
+    const a = lengkapi_('Ikhwan', STATUS_DATA_LAMA), b = lengkapi_('Akhwat', STATUS_DATA_LAMA);
+    Logger.log('Sel diperbarui: Ikhwan ' + a + ', Akhwat ' + b + ' (status ' + STATUS_DATA_LAMA + ')');
+  });
+}
+
+function taarufSheet_() {
+  const ss = ss_();
+  let sh = ss.getSheetByName('Taaruf');
+  if (!sh) {
+    sh = ss.insertSheet('Taaruf');
+    sh.appendRow(TAARUF_HDR);
+    sh.setFrozenRows(1);
+    sh.getRange(1, 1, sh.getMaxRows(), TAARUF_HDR.length).setNumberFormat('@');
+  }
+  return sh;
+}
+function taarufRows_() {
+  const v = taarufSheet_().getDataRange().getValues();
+  v.shift();
+  return v.map(function (r, i) {
+    const o = { _row: i + 2 };
+    TAARUF_HDR.forEach(function (k, j) { o[k] = r[j]; });
+    return o;
+  });
+}
 
 /* ---------- publik ---------- */
 function list(b) {
-  return rows_('Peserta')
-    .filter(function (p) { return p.status === 'Disetujui' && (!b.gender || p.gender === b.gender); })
-    .map(publik_);
+  const g = b.gender;
+  const src = g === 'Ikhwan' || g === 'Akhwat' ? rows_(g) : semua_();
+  return src.filter(aktif_).map(publik_);
 }
 
 function get(b) {
-  const p = rows_('Peserta').filter(function (x) { return x.id === cl_(b.id) && x.status === 'Disetujui'; })[0];
+  const p = semua_().filter(function (x) { return x.kode === cl_(b.id).toUpperCase() && aktif_(x); })[0];
   if (!p) throw new Error('Profil tidak ditemukan.');
   return publik_(p);
 }
 
 function register(b) {
   if (b.website) throw new Error('Permintaan ditolak.'); // honeypot
-  const wajib = ['nama', 'gender', 'tglLahir', 'tinggi', 'domisili', 'pendidikan', 'pekerjaan', 'pemahaman', 'visi', 'kriteria', 'wali', 'waliWa', 'wa'];
-  wajib.forEach(function (k) { if (!cl_(b[k])) throw new Error('Data belum lengkap: ' + k); });
   if (['Ikhwan', 'Akhwat'].indexOf(b.gender) < 0) throw new Error('Jenis kelamin tidak valid.');
-  if (STATUS_NIKAH_OK.indexOf(b.statusNikah) < 0) throw new Error('Status pernikahan tidak valid.');
-  const usia = age_(b.tglLahir);
-  if (usia === '' || usia < 18 || usia > 70) throw new Error('Usia minimal 18 tahun.');
+  const g = b.gender;
+  const wajib = ['untuk', 'nama', 'wa', 'tglLahir', 'status', 'tinggi', 'berat', 'suku', 'domAsal', 'domSekarang',
+    'pendidikan', 'pekerjaan', 'penghasilan', 'izin', 'ciri', 'unggul', 'kegiatan', 'ustadz', 'tinggal', 'kriteria', 'bedaPulau']
+    // Mengikuti Google Form: ikhwan wajib mengisi ormas (kekurangan opsional); akhwat sebaliknya.
+    .concat(g === 'Akhwat' ? ['kurang', 'bedaProv', 'bedaKab'] : ['ormas']);
+  wajib.forEach(function (k) { if (!cl_(b[k])) throw new Error('Data belum lengkap: ' + k); });
+  const pasangan = (Array.isArray(b.pasangan) ? b.pasangan : [b.pasangan]).map(function (x) { return cl_(x, 100); }).filter(String);
+  if (!pasangan.length) throw new Error('Data belum lengkap: pasangan');
+  const usia = usia_(b.tglLahir);
+  if (usia === '' || usia < 18 || usia > 80) throw new Error('Usia minimal 18 tahun.');
+  const tinggi = Number(b.tinggi), berat = Number(b.berat);
+  if (!(tinggi >= 120 && tinggi <= 220)) throw new Error('Tinggi badan tidak wajar.');
+  if (!(berat >= 25 && berat <= 250)) throw new Error('Berat badan tidak wajar.');
+  if (digits_(b.wa).length < 9) throw new Error('Nomor WhatsApp tidak valid.');
   if (!b.setuju) throw new Error('Anda harus menyetujui ketentuan.');
-  if (!b.foto || !b.foto.data) throw new Error('Foto wajib diunggah untuk verifikasi.');
-  if (b.foto.data.length > 2800000) throw new Error('Ukuran foto terlalu besar.');
+
+  const nilai = {
+    untuk: cl_(b.untuk, 40), nama: cl_(b.nama, 80), wa: digits_(b.wa), tglLahir: cl_(b.tglLahir, 10),
+    status: cl_(b.status, 60), tinggi: String(tinggi), berat: String(berat), suku: cl_(b.suku, 40),
+    domAsal: cl_(b.domAsal, 80), domSekarang: cl_(b.domSekarang, 80), salaf: cl_(b.salaf, 60),
+    pendidikan: cl_(b.pendidikan, 60), pekerjaan: cl_(b.pekerjaan, 100), penghasilan: cl_(b.penghasilan, 60),
+    izin: cl_(b.izin, 60), ciri: cl_(b.ciri, 500), unggul: cl_(b.unggul, 800), kurang: cl_(b.kurang, 800),
+    kegiatan: cl_(b.kegiatan, 300), ormas: cl_(b.ormas, 100), ustadz: cl_(b.ustadz, 400),
+    bedaPulau: cl_(b.bedaPulau, 40), bedaProv: cl_(b.bedaProv, 40), bedaKab: cl_(b.bedaKab, 40),
+    tinggal: cl_(b.tinggal, 200), pasangan: pasangan.join(', '), kriteria: cl_(b.kriteria, 800),
+  };
 
   return withLock_(function () {
-    const wa = digits_(b.wa);
-    if (rows_('Peserta').some(function (p) { return digits_(p.wa) === wa; })) throw new Error('Nomor WhatsApp ini sudah terdaftar.');
-    const id = 'BJ-' + Utilities.getUuid().replace(/-/g, '').slice(0, 6).toUpperCase();
-    const blob = Utilities.newBlob(Utilities.base64Decode(b.foto.data), 'image/jpeg', id + '.jpg');
-    const file = DriveApp.getFolderById(prop_('FOLDER_ID')).createFile(blob); // privat, hanya pemilik script
-    const rec = {
-      id: id, createdAt: new Date().toISOString(), status: 'Menunggu',
-      nama: cl_(b.nama, 80), gender: b.gender, tglLahir: cl_(b.tglLahir, 10), tinggi: cl_(b.tinggi, 3),
-      pendidikan: cl_(b.pendidikan, 40), pekerjaan: cl_(b.pekerjaan, 80), domisili: cl_(b.domisili, 80),
-      statusNikah: b.statusNikah, jmlAnak: cl_(b.jmlAnak || '0', 2), hafalan: cl_(b.hafalan, 80),
-      pemahaman: cl_(b.pemahaman, 600), visi: cl_(b.visi, 800), kriteria: cl_(b.kriteria, 800),
-      wali: cl_(b.wali, 80), waliWa: digits_(b.waliWa), wa: wa, email: cl_(b.email, 100),
-      fotoId: file.getId(), catatanAdmin: '',
-    };
-    sheet_('Peserta').appendRow(SHEETS.Peserta.map(function (k) { return rec[k]; }));
-    return { id: id };
+    if (semua_().some(function (p) { return digits_(p.wa) === nilai.wa; })) throw new Error('Nomor WhatsApp ini sudah terdaftar.');
+    lengkapi_(g, 'Menunggu'); // pastikan baris lain dari Google Form sudah punya kode
+    const I = info_(g);
+    const ada = rows_(g);
+    let maks = 0;
+    ada.forEach(function (p) { const m = p.kode.match(/(\d+)$/); if (m) maks = Math.max(maks, +m[1]); });
+    const kode = PREFIX[g] + '-' + ('000' + (maks + 1)).slice(-3);
+
+    const baris = new Array(I.headers.length).fill('');
+    Object.keys(nilai).forEach(function (k) { if (I.col[k] >= 0) baris[I.col[k]] = nilai[k]; });
+    if (I.col.nomor >= 0) baris[I.col.nomor] = String(maks + 1);
+    if (I.col.waktu >= 0) baris[I.col.waktu] = new Date();
+    baris[I.col.kode] = kode;
+    baris[I.col.verif] = 'Menunggu';
+    const r = I.sh.getLastRow() + 1;
+    const rg = I.sh.getRange(r, 1, 1, baris.length);
+    rg.setNumberFormat('@'); // teks polos: nomor WA tidak kehilangan angka 0 di depan
+    rg.setValues([baris]);
+    if (I.col.waktu >= 0) I.sh.getRange(r, I.col.waktu + 1).setNumberFormat('yyyy-mm-dd hh:mm:ss');
+    return { id: kode };
   });
 }
-const STATUS_NIKAH_OK = ['Lajang', 'Duda', 'Janda'];
 
 function taaruf(b) {
   const pesan = cl_(b.pesan, 500);
   if (pesan.length < 10) throw new Error('Pesan minimal 10 karakter.');
   return withLock_(function () {
-    const semua = rows_('Peserta');
-    const dari = semua.filter(function (p) { return p.id === cl_(b.dari).toUpperCase() && p.status === 'Disetujui'; })[0];
+    const semuaP = semua_();
+    const dari = semuaP.filter(function (p) { return p.kode === cl_(b.dari).toUpperCase() && aktif_(p); })[0];
     if (!dari) throw new Error('Kode peserta Anda tidak ditemukan atau belum disetujui.');
-    const ke = semua.filter(function (p) { return p.id === cl_(b.kepada) && p.status === 'Disetujui'; })[0];
+    const ke = semuaP.filter(function (p) { return p.kode === cl_(b.kepada).toUpperCase() && aktif_(p); })[0];
     if (!ke) throw new Error('Profil tujuan tidak tersedia.');
     if (dari.gender === ke.gender) throw new Error('Ta’aruf hanya antara ikhwan dan akhwat.');
-    const ada = rows_('Taaruf').some(function (t) {
-      return t.dari === dari.id && t.kepada === ke.id && (t.status === 'Menunggu' || t.status === 'Diproses');
+    const ada = taarufRows_().some(function (t) {
+      return t.dari === dari.kode && t.kepada === ke.kode && (t.status === 'Menunggu' || t.status === 'Diproses');
     });
     if (ada) throw new Error('Pengajuan Anda ke profil ini masih diproses.');
     const id = 'TA-' + Utilities.getUuid().replace(/-/g, '').slice(0, 6).toUpperCase();
-    const rec = { id: id, createdAt: new Date().toISOString(), dari: dari.id, kepada: ke.id, pesan: pesan, status: 'Menunggu', catatanAdmin: '' };
-    sheet_('Taaruf').appendRow(SHEETS.Taaruf.map(function (k) { return rec[k]; }));
+    const rec = { id: id, createdAt: new Date().toISOString(), dari: dari.kode, kepada: ke.kode, pesan: pesan, status: 'Menunggu', catatanAdmin: '' };
+    taarufSheet_().appendRow(TAARUF_HDR.map(function (k) { return rec[k]; }));
     return { id: id };
   });
 }
@@ -182,14 +389,16 @@ function adminLogin(b) {
 
 function adminList(b) {
   cekAdmin_(b.token);
-  const peserta = rows_('Peserta').map(function (p) {
+  withLock_(function () { lengkapi_('Ikhwan', 'Menunggu'); lengkapi_('Akhwat', 'Menunggu'); }); // kiriman Google Form baru
+  const peserta = semua_().map(function (p) {
     const o = Object.assign({}, p);
-    o.usia = age_(p.tglLahir);
-    o.adaFoto = !!p.fotoId;
-    delete o.fotoId; delete o._row;
+    o.id = p.kode;
+    o.usia = usia_(p.tglLahir);
+    o.tglLahir = p.tglLahir instanceof Date ? Utilities.formatDate(p.tglLahir, Session.getScriptTimeZone(), 'yyyy-MM-dd') : String(p.tglLahir);
+    delete o._row; delete o.kode; delete o.waktu; delete o.nomor;
     return o;
   });
-  const taaruf = rows_('Taaruf').map(function (t) { delete t._row; return t; });
+  const taaruf = taarufRows_().map(function (t) { delete t._row; return t; });
   return { peserta: peserta, taaruf: taaruf };
 }
 
@@ -197,10 +406,10 @@ function adminUpdate(b) {
   cekAdmin_(b.token);
   if (STATUS_PESERTA.indexOf(b.status) < 0) throw new Error('Status tidak valid.');
   return withLock_(function () {
-    const p = rows_('Peserta').filter(function (x) { return x.id === cl_(b.id); })[0];
+    const p = semua_().filter(function (x) { return x.kode === cl_(b.id).toUpperCase(); })[0];
     if (!p) throw new Error('Peserta tidak ditemukan.');
-    setCell_('Peserta', p._row, 'status', b.status);
-    if (b.catatan != null) setCell_('Peserta', p._row, 'catatanAdmin', cl_(b.catatan, 500));
+    setCell_(p, 'verif', b.status);
+    if (b.catatan != null) setCell_(p, 'catatan', cl_(b.catatan, 500));
     return { ok: true };
   });
 }
@@ -209,18 +418,11 @@ function adminTaaruf(b) {
   cekAdmin_(b.token);
   if (STATUS_TAARUF.indexOf(b.status) < 0) throw new Error('Status tidak valid.');
   return withLock_(function () {
-    const t = rows_('Taaruf').filter(function (x) { return x.id === cl_(b.id); })[0];
+    const t = taarufRows_().filter(function (x) { return x.id === cl_(b.id); })[0];
     if (!t) throw new Error('Pengajuan tidak ditemukan.');
-    setCell_('Taaruf', t._row, 'status', b.status);
-    if (b.catatan != null) setCell_('Taaruf', t._row, 'catatanAdmin', cl_(b.catatan, 500));
+    const sh = taarufSheet_();
+    sh.getRange(t._row, TAARUF_HDR.indexOf('status') + 1).setValue(b.status);
+    if (b.catatan != null) sh.getRange(t._row, TAARUF_HDR.indexOf('catatanAdmin') + 1).setValue(cl_(b.catatan, 500));
     return { ok: true };
   });
-}
-
-function adminPhoto(b) {
-  cekAdmin_(b.token);
-  const p = rows_('Peserta').filter(function (x) { return x.id === cl_(b.id); })[0];
-  if (!p || !p.fotoId) throw new Error('Foto tidak ada.');
-  const blob = DriveApp.getFileById(p.fotoId).getBlob();
-  return { src: 'data:' + blob.getContentType() + ';base64,' + Utilities.base64Encode(blob.getBytes()) };
 }

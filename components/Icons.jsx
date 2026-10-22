@@ -16,3 +16,4 @@ export const Lock = make('M6 11V8a6 6 0 1112 0v3 M5 11h14v10H5z');
 export const Upload = make('M12 16V4 M7 9l5-5 5 5 M4 20h16');
 export const Check = make('M5 12.5l4.5 4.5L19 7');
 export const Plus = make('M12 5v14M5 12h14');
+export const Home = make('M4 11l8-7 8 7 M6 10v10h12V10 M10 20v-5h4v5');

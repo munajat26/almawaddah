@@ -2,6 +2,7 @@ import { Inter, Amiri } from 'next/font/google';
 import './globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import TabBar from '../components/TabBar';
 import { SITE } from '../lib/site';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -25,6 +26,9 @@ export const metadata = {
   twitter: { card: 'summary', title: `${SITE.nama} — ${SITE.tagline}`, description: SITE.deskripsi },
 };
 export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#f4f5f4' },
     { media: '(prefers-color-scheme: dark)', color: '#0a1110' },
@@ -36,12 +40,13 @@ const THEME_SCRIPT = `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id" suppressHydrationWarning className={`${inter.variable} ${amiri.variable}`}>
+    <html lang="id" suppressHydrationWarning data-scroll-behavior="smooth" className={`${inter.variable} ${amiri.variable}`}>
       <head><script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} /></head>
       <body className="flex min-h-dvh flex-col">
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <TabBar />
       </body>
     </html>
   );

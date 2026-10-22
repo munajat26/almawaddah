@@ -22,13 +22,28 @@ export function Monogram({ text, className = '' }) {
   );
 }
 
+// Avatar tanpa wajah, agar identitas peserta tetap terjaga.
+// Gambar ada di public/avatar/ (ikhwan.jpg dan akhwat.jpg), bisa diganti kapan saja.
+export function Siluet({ gender, className = '' }) {
+  const ikhwan = gender === 'Ikhwan';
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/avatar/${ikhwan ? 'ikhwan' : 'akhwat'}.jpg`}
+      alt={`Avatar ${ikhwan ? 'ikhwan' : 'akhwat'}`}
+      width={320} height={320} loading="lazy" draggable={false}
+      className={`shrink-0 rounded-full bg-white object-cover ring-2 ring-gold-400/70 ring-offset-2 ring-offset-surface ${className}`}
+    />
+  );
+}
+
 // Kontrol segmen ala iOS/macOS
 export function Segmented({ value, onChange, options }) {
   return (
-    <div role="tablist" className="inline-flex max-w-full overflow-x-auto rounded-full bg-ink/[0.06] p-1">
+    <div role="tablist" className="inline-flex max-w-full overflow-x-auto rounded-full bg-ink/[0.06] p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {options.map(([v, l]) => (
         <button key={l} role="tab" aria-selected={value === v} onClick={() => onChange(v)}
-          className={`shrink-0 rounded-full px-5 py-1.5 text-sm font-medium transition-all ${value === v ? 'bg-white text-ink shadow-[0_1px_3px_rgba(0,0,0,.14)] dark:bg-white/15 dark:shadow-none' : 'text-muted hover:text-ink'}`}>
+          className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-medium md:py-1.5 transition-all ${value === v ? 'bg-white text-ink shadow-[0_1px_3px_rgba(0,0,0,.14)] dark:bg-white/15 dark:shadow-none' : 'text-muted hover:text-ink'}`}>
           {l}
         </button>
       ))}

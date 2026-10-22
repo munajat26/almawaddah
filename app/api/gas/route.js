@@ -1,6 +1,6 @@
 export const maxDuration = 30;
 
-const ACTIONS = new Set(['list', 'get', 'register', 'taaruf', 'adminLogin', 'adminList', 'adminUpdate', 'adminTaaruf', 'adminPhoto']);
+const ACTIONS = new Set(['list', 'get', 'register', 'taaruf', 'adminLogin', 'adminList', 'adminUpdate', 'adminTaaruf']);
 
 export async function POST(req) {
   const { GAS_URL, GAS_API_KEY } = process.env;
