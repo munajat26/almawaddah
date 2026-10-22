@@ -29,7 +29,7 @@ export default function Home() {
     <>
       {/* Hero */}
       <section className="relative overflow-hidden pb-16 pt-28 text-center sm:pb-24 sm:pt-40">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_45%_at_50%_0%,rgb(17_104_91/0.2),transparent_72%),radial-gradient(35%_30%_at_88%_8%,rgb(207_174_101/0.22),transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_45%_at_50%_0%,rgb(70_110_180/0.20),transparent_72%),radial-gradient(35%_30%_at_88%_8%,rgb(212_24_46/0.10),transparent_70%)]" />
         <div className="pattern-gold fade-radial pointer-events-none absolute inset-0 opacity-[0.22]" />
 
         <div className="relative mx-auto max-w-4xl px-5">
@@ -38,7 +38,7 @@ export default function Home() {
             Ta’aruf yang tertata, dijalani dengan tenang.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl">
-            {SITE.nama} mempertemukan ikhwan dan akhwat dengan data yang terverifikasi, identitas yang terlindungi, dan wali yang mendampingi di setiap langkah.
+            {SITE.nama} by {SITE.oleh} mempertemukan ikhwan dan akhwat dengan data yang terverifikasi, identitas yang terlindungi, dan wali yang mendampingi di setiap langkah.
           </p>
           <div className="mt-8 flex flex-col items-stretch gap-3 sm:mt-9 sm:flex-row sm:items-center sm:justify-center">
             <Link href="/daftar" className="btn-primary !h-12 !px-7">Daftar sebagai peserta</Link>
@@ -61,7 +61,7 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-5 py-16 sm:py-24">
         <h2 className="max-w-2xl text-3xl font-semibold leading-[1.08] tracking-[-0.035em] sm:text-5xl">Dirancang untuk menjaga adab dan privasi.</h2>
         <div className="mt-12 grid gap-4 md:grid-cols-6">
-          <div className="relative overflow-hidden rounded-[32px] bg-jade-950 p-8 text-white md:col-span-4 md:p-10 dark:ring-1 dark:ring-white/10">
+          <div className="relative overflow-hidden rounded-[32px] bg-ruby-950 p-8 text-white md:col-span-4 md:p-10 dark:ring-1 dark:ring-white/10">
             <div className="pattern-gold absolute inset-0 opacity-[0.12]" />
             <div className="relative">
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gold-300/15 text-gold-300 ring-1 ring-gold-300/30"><Shield /></span>
@@ -106,7 +106,7 @@ export default function Home() {
         <ol className="mt-12 grid gap-4 md:grid-cols-4">
           {ALUR.map(([j, d], i) => (
             <li key={j} className="panel p-7">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-linear-to-b from-gold-200 to-gold-400 text-base font-semibold text-jade-950 shadow-[inset_0_1px_0_rgba(255,255,255,.6)]">{i + 1}</span>
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-linear-to-b from-gold-200 to-gold-400 text-base font-semibold text-ruby-950 shadow-[inset_0_1px_0_rgba(255,255,255,.6)]">{i + 1}</span>
               <h3 className="mt-5 text-xl font-semibold tracking-[-0.02em]">{j}</h3>
               <p className="mt-2 text-[15px] leading-relaxed text-muted">{d}</p>
             </li>
@@ -115,7 +115,7 @@ export default function Home() {
       </section>
 
       {/* Ayat */}
-      <section className="relative overflow-hidden bg-jade-950 py-16 text-center sm:py-24 dark:border-y dark:border-white/10">
+      <section className="relative overflow-hidden bg-ruby-950 py-16 text-center sm:py-24 dark:border-y dark:border-white/10">
         <div className="pattern-gold fade-radial absolute inset-0 opacity-[0.16]" />
         <div className="relative mx-auto max-w-3xl px-5">
           <p lang="ar" dir="rtl" className="font-arabic text-4xl leading-[1.9] text-gold-300 sm:text-5xl">
@@ -146,7 +146,7 @@ export default function Home() {
 
       {/* Ajakan */}
       <section className="mx-auto max-w-6xl px-5 pb-16 sm:pb-24">
-        <div className="relative overflow-hidden rounded-[32px] sm:rounded-[40px] bg-linear-to-br from-jade-800 to-jade-950 px-6 py-16 text-center text-white sm:py-20">
+        <div className="relative overflow-hidden rounded-[32px] sm:rounded-[40px] bg-linear-to-br from-ruby-800 to-ruby-950 px-6 py-16 text-center text-white sm:py-20">
           <div className="pattern-gold fade-radial absolute inset-0 opacity-[0.18]" />
           <div className="relative">
             <h2 className="mx-auto max-w-xl text-4xl font-semibold leading-[1.08] tracking-[-0.035em] sm:text-5xl">Siap memulai ta’aruf?</h2>

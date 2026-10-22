@@ -30,7 +30,7 @@ function Isian({ b, f, setF, bind }) {
         <div className="space-y-2.5">
           {b.opsi.map((o) => (
             <label key={o} className="flex min-h-11 items-center gap-3 text-[15px]">
-              <input type="checkbox" checked={v.includes(o)} onChange={() => toggle(o)} className="h-5 w-5 shrink-0 accent-jade-800" />{o}
+              <input type="checkbox" checked={v.includes(o)} onChange={() => toggle(o)} className="h-5 w-5 shrink-0 accent-ruby-800" />{o}
             </label>
           ))}
         </div>
@@ -104,7 +104,7 @@ export default function Daftar() {
   if (kode) {
     return (
       <div className="mx-auto max-w-lg px-5 pb-16 pt-28 text-center md:pb-24 md:pt-36">
-        <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-linear-to-b from-gold-200 to-gold-400 text-jade-950 shadow-[inset_0_1px_0_rgba(255,255,255,.6)]"><Check className="h-8 w-8" /></span>
+        <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-linear-to-b from-gold-200 to-gold-400 text-ruby-950 shadow-[inset_0_1px_0_rgba(255,255,255,.6)]"><Check className="h-8 w-8" /></span>
         <h1 className="mt-6 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">Pendaftaran terkirim</h1>
         <p className="mt-3 text-muted">Simpan kode peserta Anda. Kode ini diperlukan saat mengajukan ta’aruf.</p>
         <div className="panel mx-auto mt-8 px-6 py-7 ring-1 ring-gold-400/40 sm:px-8">
@@ -145,7 +145,7 @@ export default function Daftar() {
               <div className="grid grid-cols-2 gap-3">
                 {['Ikhwan', 'Akhwat'].map((g) => (
                   <button type="button" key={g} onClick={() => g !== f.gender && setF({ ...AWAL, gender: g })} aria-pressed={f.gender === g}
-                    className={`h-14 rounded-2xl text-base sm:text-[15px] font-medium transition-all ${f.gender === g ? 'bg-linear-to-b from-jade-700 to-jade-900 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_8px_20px_-8px_rgba(7,58,51,.7)]' : 'bg-surface ring-1 ring-ink/15 hover:ring-jade-700'}`}>
+                    className={`h-14 rounded-2xl text-base sm:text-[15px] font-medium transition-all ${f.gender === g ? 'bg-linear-to-b from-ruby-700 to-ruby-900 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_8px_20px_-8px_rgba(138,14,31,.65)]' : 'bg-surface ring-1 ring-ink/15 hover:ring-ruby-700'}`}>
                     {g}
                   </button>
                 ))}
@@ -166,7 +166,7 @@ export default function Daftar() {
           {step === jumlah - 1 && (<>
             <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" {...bind('website')} />
             <label className="flex items-start gap-3 text-sm leading-relaxed">
-              <input type="checkbox" checked={f.setuju} onChange={(e) => setF({ ...f, setuju: e.target.checked })} className="mt-0.5 h-5 w-5 shrink-0 accent-jade-800" />
+              <input type="checkbox" checked={f.setuju} onChange={(e) => setF({ ...f, setuju: e.target.checked })} className="mt-0.5 h-5 w-5 shrink-0 accent-ruby-800" />
               <span>Data yang saya isi benar, dan saya bersedia menjalani proses ta’aruf melalui admin dan didampingi wali.</span>
             </label>
           </>)}

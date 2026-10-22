@@ -5,37 +5,37 @@
 /* ---------- Token tema: terang (default) dan gelap ---------- */
 :root {
   color-scheme: light;
-  --pearl: #f4f5f4;
-  --ink: #0f1514;
-  --muted: #5b6866;
-  --hair: rgb(15 21 20 / 0.09);
-  --line: rgb(15 21 20 / 0.12);
+  --pearl: #e8edf4;
+  --ink: #16202f;
+  --muted: #556176;
+  --hair: rgb(28 48 84 / 0.11);
+  --line: rgb(28 48 84 / 0.18);
   --surface: #ffffff;
-  --brand: #0b4f45;
-  --brand-strong: #073a33;
-  --brand-soft: #eef5f3;
-  --brand-ring: #dcebe7;
+  --brand: #b8112a;
+  --brand-strong: #8a0e1f;
+  --brand-soft: #f9e4e8;
+  --brand-ring: #efb3be;
   --gold-ink: #7d6129;
-  --glass-bg: rgb(255 255 255 / 0.62);
-  --glass-edge: rgb(255 255 255 / 0.75);
+  --glass-bg: rgb(247 249 253 / 0.62);
+  --glass-edge: rgb(255 255 255 / 0.85);
   --glass-hi: rgb(255 255 255 / 0.9);
-  --shadow-soft: 0 1px 2px rgb(7 40 34 / 0.04), 0 10px 28px -10px rgb(7 40 34 / 0.12);
-  --shadow-lift: 0 2px 4px rgb(7 40 34 / 0.05), 0 30px 60px -20px rgb(7 40 34 / 0.28);
+  --shadow-soft: 0 1px 2px rgb(25 45 85 / 0.06), 0 10px 28px -10px rgb(25 45 85 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(25 45 85 / 0.07), 0 30px 60px -20px rgb(25 45 85 / 0.30);
 }
 .dark {
   color-scheme: dark;
-  --pearl: #0a1110;
-  --ink: #e9f0ee;
-  --muted: #9aaba7;
+  --pearl: #150a0d;
+  --ink: #f7ecee;
+  --muted: #bda0a6;
   --hair: rgb(255 255 255 / 0.09);
   --line: rgb(255 255 255 / 0.14);
-  --surface: #121b19;
-  --brand: #66c9b6;
-  --brand-strong: #93e0cf;
-  --brand-soft: rgb(102 201 182 / 0.12);
-  --brand-ring: rgb(102 201 182 / 0.26);
+  --surface: #1f1115;
+  --brand: #ff7d8e;
+  --brand-strong: #ffb4bf;
+  --brand-soft: rgb(255 125 142 / 0.12);
+  --brand-ring: rgb(255 125 142 / 0.28);
   --gold-ink: #e0c98d;
-  --glass-bg: rgb(20 30 28 / 0.6);
+  --glass-bg: rgb(34 18 22 / 0.62);
   --glass-edge: rgb(255 255 255 / 0.10);
   --glass-hi: rgb(255 255 255 / 0.08);
   --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -10px rgb(0 0 0 / 0.5);
@@ -62,12 +62,13 @@
 }
 
 @theme {
-  --color-jade-950: #04201c;
-  --color-jade-900: #073a33;
-  --color-jade-800: #0b4f45;
-  --color-jade-700: #11685b;
-  --color-jade-100: #dcebe7;
-  --color-jade-50: #eef5f3;
+  --color-ruby-950: #2b040a;
+  --color-ruby-900: #5a0914;
+  --color-ruby-800: #8a0e1f;
+  --color-ruby-700: #b8112a;
+  --color-ruby-600: #d4182e;
+  --color-ruby-100: #fbe1e5;
+  --color-ruby-50: #fdf0f2;
   --color-gold-200: #efe0b9;
   --color-gold-300: #e0c98d;
   --color-gold-400: #cfae65;
@@ -86,7 +87,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
-::selection { background: var(--color-gold-300); color: var(--color-jade-950); }
+::selection { background: var(--color-gold-300); color: var(--color-ruby-950); }
 :focus-visible { outline: 2px solid var(--color-gold-500); outline-offset: 3px; }
 
 /* Sentuhan: hilangkan jeda 300ms dan zoom ganda pada kontrol */
@@ -98,7 +99,7 @@ a, button, summary, label, select, input, textarea { touch-action: manipulation;
   backdrop-filter: blur(24px) saturate(1.6);
   -webkit-backdrop-filter: blur(24px) saturate(1.6);
   border: 1px solid var(--glass-edge);
-  box-shadow: inset 0 1px 0 var(--glass-hi), 0 12px 40px -12px rgb(7 40 34 / 0.22), 0 0 0 0.5px var(--hair);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 12px 40px -12px rgb(25 45 85 / 0.22), 0 0 0 0.5px var(--hair);
 }
 
 /* ---------- Tombol ---------- */
@@ -120,13 +121,13 @@ a, button, summary, label, select, input, textarea { touch-action: manipulation;
 @utility btn-primary {
   @apply btn;
   color: #fff;
-  background: linear-gradient(180deg, var(--color-jade-700), var(--color-jade-900));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 8px 20px -8px rgb(7 58 51 / 0.7);
-  &:hover { background: linear-gradient(180deg, #167a6b, var(--color-jade-800)); }
+  background: linear-gradient(180deg, var(--color-ruby-600), var(--color-ruby-800));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 8px 20px -8px rgb(138 14 31 / 0.65);
+  &:hover { background: linear-gradient(180deg, #e01d34, var(--color-ruby-700)); }
 }
 @utility btn-gold {
   @apply btn;
-  color: var(--color-jade-950);
+  color: var(--color-ruby-950);
   background: linear-gradient(180deg, var(--color-gold-200), var(--color-gold-400));
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 8px 24px -8px rgb(184 146 74 / 0.8);
   &:hover { filter: brightness(1.05); }
@@ -158,8 +159,8 @@ a, button, summary, label, select, input, textarea { touch-action: manipulation;
   box-shadow: inset 0 0 0 1px var(--line);
   transition: box-shadow .2s ease;
   @media (min-width: 48rem) { font-size: 15px; }
-  &::placeholder { color: rgb(91 104 102 / 0.65); }
-  &:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--color-jade-700), 0 0 0 4px rgb(17 104 91 / 0.2); }
+  &::placeholder { color: rgb(85 97 118 / 0.6); }
+  &:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--color-ruby-700), 0 0 0 4px rgb(184 17 42 / 0.18); }
 }
 @utility field-area {
   @apply field;

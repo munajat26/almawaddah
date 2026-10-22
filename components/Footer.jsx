@@ -9,7 +9,10 @@ export default function Footer() {
         <div className="max-w-sm">
           <div className="flex items-center gap-2.5">
             <Logo size={30} />
-            <span className="text-lg font-semibold tracking-[-0.02em] text-brand-strong">{SITE.nama}</span>
+            <span className="flex flex-col leading-none">
+              <span className="text-lg font-semibold tracking-[-0.02em] text-brand-strong">{SITE.nama}</span>
+              <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-gold-ink">by {SITE.oleh}</span>
+            </span>
           </div>
           <p className="mt-3 text-sm leading-relaxed text-muted">{SITE.deskripsi}</p>
         </div>
@@ -26,7 +29,7 @@ export default function Footer() {
         </nav>
       </div>
       <div className="border-t border-hair px-5 py-5 text-center text-xs text-muted">
-        © {new Date().getFullYear()} {SITE.nama}. Data peserta hanya dibagikan atas persetujuan kedua pihak dan wali.
+        © {new Date().getFullYear()} {SITE.nama} by {SITE.oleh}. Data peserta hanya dibagikan atas persetujuan kedua pihak dan wali.
       </div>
     </footer>
   );

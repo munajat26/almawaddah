@@ -1,13 +1,19 @@
-import Star from './Star';
+import Image from 'next/image';
+import { SITE } from '../lib/site';
 
-// Logo berbentuk ikon aplikasi (squircle) dengan bintang emas.
+// Logo RGM (cincin emas + tulisan RGM). Sumbernya sama dengan ikon PWA/favicon: public/logo-rgm.png.
+// PNG-nya sudah bersudut membulat dan transparan, jadi cukup ditampilkan apa adanya.
 export default function Logo({ size = 34 }) {
   return (
-    <span
+    <Image
+      src="/logo-rgm.png"
+      alt={`Logo ${SITE.nama}`}
+      width={size}
+      height={size}
+      sizes={`${size}px`}
+      className="shrink-0 rounded-[24%] shadow-[0_4px_10px_-3px_rgba(25,45,85,.35)]"
       style={{ width: size, height: size }}
-      className="grid shrink-0 place-items-center rounded-[28%] bg-linear-to-br from-jade-700 to-jade-950 shadow-[inset_0_1px_0_rgba(255,255,255,.25),0_4px_10px_-3px_rgba(4,32,28,.6)]"
-    >
-      <Star className="h-[64%] w-[64%] text-gold-300" sw={4.5} />
-    </span>
+      priority
+    />
   );
 }

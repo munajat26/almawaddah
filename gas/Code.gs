@@ -130,11 +130,27 @@ function info_(g) {
   const col = {};
   Object.keys(HEADER[g]).forEach(function (k) { col[k] = cari_(headers, HEADER[g][k]); });
   Object.keys(KOLOM_ADMIN).forEach(function (k) { col[k] = cari_(headers, KOLOM_ADMIN[k]); });
+  // Semua kolom yang berawalan "Nama Lengkap": form lama / form gabungan kadang menaruh nama di kolom lain
+  // (mis. "(Untuk Ikhwan)" untuk baris akhwat). Dipakai sebagai cadangan agar baris tidak terbuang.
+  col.namaAlt = [];
+  headers.forEach(function (h, i) { if (norm_(h).indexOf('namalengkap') === 0 && i !== col.nama) col.namaAlt.push(i); });
   col.waktu = headers.map(norm_).indexOf('timestamp');
   if (col.waktu < 0) col.waktu = headers.map(norm_).indexOf('capwaktu');
   const hilang = Object.keys(HEADER[g]).filter(function (k) { return col[k] < 0 && k !== 'nomor' && k !== 'salaf'; });
   if (hilang.length) throw new Error('Header sheet ' + nama + ' tidak ditemukan untuk: ' + hilang.join(', '));
   return (INFO_[g] = { sh: sh, headers: headers, col: col });
+}
+
+// Nama baris: kolom nama utama, bila kosong coba kolom "Nama Lengkap ..." lain.
+function namaBaris_(I, r) {
+  let n = I.col.nama >= 0 ? String(r[I.col.nama] || '').trim() : '';
+  for (let k = 0; !n && k < I.col.namaAlt.length; k++) n = String(r[I.col.namaAlt[k]] || '').trim();
+  return n;
+}
+// Baris dianggap data peserta bila ada nama, atau (nama kosong) ada nomor WA / tanggal lahir.
+function barisIsi_(I, r) {
+  if (namaBaris_(I, r)) return true;
+  return (I.col.wa >= 0 && String(r[I.col.wa] || '').trim() !== '') || (I.col.tglLahir >= 0 && String(r[I.col.tglLahir] || '').trim() !== '');
 }
 
 function parseDate_(v) {
@@ -165,11 +181,12 @@ function rows_(g) {
   const out = [];
   for (let i = 1; i < v.length; i++) {
     const r = v[i];
-    if (I.col.nama >= 0 && !String(r[I.col.nama]).trim()) continue; // baris kosong
+    if (!barisIsi_(I, r)) continue; // baris benar-benar kosong
     const o = { gender: g, _row: i + 1 };
     Object.keys(I.col).forEach(function (k) {
-      if (I.col[k] >= 0) o[k] = r[I.col[k]];
+      if (typeof I.col[k] === 'number' && I.col[k] >= 0) o[k] = r[I.col[k]];
     });
+    o.nama = namaBaris_(I, r) || '(tanpa nama)';
     Object.keys(o).forEach(function (k) { if (typeof o[k] === 'string') o[k] = o[k].trim(); });
     o.kode = String(o.kode || '');
     o.verif = String(o.verif || '');
@@ -191,7 +208,8 @@ function lengkapi_(g, statusAwal) {
   if (last < 2) return 0;
   const n = last - 1;
   const rg = function (k) { return I.sh.getRange(2, I.col[k] + 1, n, 1); };
-  const nama = rg('nama').getValues(), kode = rg('kode').getValues(), verif = rg('verif').getValues();
+  const isi = I.sh.getRange(2, 1, n, I.headers.length).getValues();
+  const kode = rg('kode').getValues(), verif = rg('verif').getValues();
   const nomor = I.col.nomor >= 0 ? rg('nomor').getValues() : null;
   const dipakai = {}; let maks = 0;
   kode.forEach(function (r) {
@@ -200,7 +218,7 @@ function lengkapi_(g, statusAwal) {
   });
   let ubah = 0;
   for (let i = 0; i < n; i++) {
-    if (!String(nama[i][0]).trim()) continue;
+    if (!barisIsi_(I, isi[i])) continue;
     if (!String(kode[i][0]).trim()) {
       let no = nomor && /^\d+$/.test(String(nomor[i][0]).trim()) ? +nomor[i][0] : i + 1;
       if (dipakai[no]) no = ++maks;
@@ -226,7 +244,7 @@ function publik_(p) {
     pasangan: p.pasangan, kriteria: p.kriteria,
   };
 }
-function aktif_(p) { return p.kode && p.verif === 'Disetujui'; }
+function aktif_(p) { return !!p.kode && String(p.verif).trim().toLowerCase() === 'disetujui'; }
 function cekAdmin_(token) {
   if (!token || !CacheService.getScriptCache().get('adm_' + token)) throw new Error('Sesi admin berakhir. Silakan masuk lagi.');
 }
@@ -255,6 +273,24 @@ const ROUTES = {
 function setup() {
   info_('Ikhwan'); info_('Akhwat'); // pastikan kolom admin ada
   taarufSheet_();
+}
+// Diagnosa: jalankan dari editor lalu lihat View > Logs. Menjelaskan kenapa jumlah peserta di situs
+// berbeda dengan jumlah baris di sheet (baris kosong, belum ada Kode, status bukan Disetujui, kode ganda).
+function diagnosa() {
+  ['Ikhwan', 'Akhwat'].forEach(function (g) {
+    const I = info_(g);
+    const v = I.sh.getDataRange().getValues(); v.shift();
+    const rows = rows_(g);
+    const stat = {}, kodeCt = {};
+    rows.forEach(function (p) {
+      const k = p.verif || '(kosong)'; stat[k] = (stat[k] || 0) + 1;
+      if (p.kode) kodeCt[p.kode] = (kodeCt[p.kode] || 0) + 1;
+    });
+    const ganda = Object.keys(kodeCt).filter(function (k) { return kodeCt[k] > 1; });
+    Logger.log(g + ': baris di sheet ' + v.length + ' | terbaca ' + rows.length + ' | tanpa Kode ' +
+      rows.filter(function (p) { return !p.kode; }).length + ' | tampil di situs ' + rows.filter(aktif_).length);
+    Logger.log(g + ': status verifikasi ' + JSON.stringify(stat) + ' | kode ganda ' + JSON.stringify(ganda));
+  });
 }
 // Beri Kode dan status pada semua data lama.
 function migrasi() {

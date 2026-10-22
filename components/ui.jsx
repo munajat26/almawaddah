@@ -9,14 +9,14 @@ export function Field({ label, hint, children }) {
 }
 
 export function Alert({ children, tone = 'error' }) {
-  const c = tone === 'error' ? 'bg-rose-50 text-rose-800 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-400/25' : 'bg-brand-soft text-brand-strong ring-brand-ring';
+  const c = tone === 'error' ? 'bg-rose-50 text-rose-800 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-400/25' : 'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/25';
   return <div role="alert" className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ring-1 ${c}`}>{children}</div>;
 }
 
 // Avatar inisial dengan cincin emas
 export function Monogram({ text, className = '' }) {
   return (
-    <div className={`grid shrink-0 place-items-center rounded-full bg-linear-to-br from-jade-700 to-jade-950 font-semibold tracking-tight text-gold-200 ring-2 ring-gold-400/70 ring-offset-2 ring-offset-surface ${className}`}>
+    <div className={`grid shrink-0 place-items-center rounded-full bg-linear-to-br from-ruby-700 to-ruby-950 font-semibold tracking-tight text-gold-200 ring-2 ring-gold-400/70 ring-offset-2 ring-offset-surface ${className}`}>
       {text}
     </div>
   );

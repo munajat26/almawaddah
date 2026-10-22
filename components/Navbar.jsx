@@ -10,7 +10,10 @@ export default function Navbar() {
       <div className="glass mx-auto flex h-14 max-w-5xl items-center justify-between rounded-full pl-3 pr-2">
         <Link href="/" className="flex items-center gap-2.5">
           <Logo size={34} />
-          <span className="text-[17px] font-semibold tracking-[-0.02em] text-brand-strong">{SITE.nama}</span>
+          <span className="flex flex-col leading-none">
+            <span className="text-[17px] font-semibold tracking-[-0.02em] text-brand-strong">{SITE.nama}</span>
+            <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-gold-ink">by {SITE.oleh}</span>
+          </span>
         </Link>
         <nav className="flex items-center gap-1">
           <ThemeToggle />

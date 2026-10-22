@@ -1,4 +1,4 @@
-# Mawaddah — Biro Jodoh Syar'i
+# Al-Mawaddah by RGM — Biro Jodoh Syar'i
 
 Next.js 16.3.1 (App Router, Tailwind v4) + Google Apps Script (Sheets sebagai database, Drive untuk foto).
 

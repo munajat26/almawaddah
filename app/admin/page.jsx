@@ -5,14 +5,15 @@ import { invalidate, peek, setCache } from '../../lib/cache';
 import { Alert, Segmented } from '../../components/ui';
 import Logo from '../../components/Logo';
 import { barisProfil } from '../../lib/profil';
+import { SITE } from '../../lib/site';
 
 const ST_P = ['Menunggu', 'Disetujui', 'Ditolak', 'Menikah'];
 const ST_T = ['Menunggu', 'Diproses', 'Diterima', 'Ditolak'];
 const WARNA = {
   Menunggu: 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/25',
-  Disetujui: 'bg-brand-soft text-brand ring-brand-ring',
+  Disetujui: 'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/25',
   Diproses: 'bg-sky-50 text-sky-800 ring-sky-200 dark:bg-sky-400/10 dark:text-sky-300 dark:ring-sky-400/25',
-  Diterima: 'bg-brand-soft text-brand ring-brand-ring',
+  Diterima: 'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/25',
   Ditolak: 'bg-rose-50 text-rose-800 ring-rose-200 dark:bg-rose-400/10 dark:text-rose-300 dark:ring-rose-400/25',
   Menikah: 'bg-gold-200/60 text-gold-ink ring-gold-400/40 dark:bg-gold-400/15',
 };
@@ -63,7 +64,8 @@ export default function Admin() {
         <form onSubmit={masuk} className="glass relative w-full max-w-sm rounded-[32px] p-6 text-center sm:p-8">
           <div className="flex justify-center"><Logo size={52} /></div>
           <h1 className="mt-5 text-2xl font-semibold tracking-[-0.03em]">Panel admin</h1>
-          <p className="mt-1 text-sm text-muted">Masukkan kata sandi untuk melanjutkan.</p>
+          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-gold-ink">{SITE.nama} by {SITE.oleh}</p>
+          <p className="mt-3 text-sm text-muted">Masukkan kata sandi untuk melanjutkan.</p>
           <input type="password" autoComplete="current-password" placeholder="Kata sandi" aria-label="Kata sandi" className="field mt-6 text-center" value={pw} onChange={(e) => setPw(e.target.value)} />
           {err && <div className="mt-4 text-left"><Alert>{err}</Alert></div>}
           <button className="btn-primary mt-5 w-full" disabled={busy || !pw}>{busy ? 'Memeriksa…' : 'Masuk'}</button>
@@ -156,7 +158,7 @@ export default function Admin() {
       )}
 
       {sel && (
-        <div className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-jade-950/40 backdrop-blur-sm md:items-center md:p-4" role="dialog" aria-modal="true" onClick={() => setSel(null)}>
+        <div className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-ruby-950/40 backdrop-blur-sm md:items-center md:p-4" role="dialog" aria-modal="true" onClick={() => setSel(null)}>
           <div className="sheet-up max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-t-[28px] bg-surface shadow-lift md:rounded-[28px]" onClick={(e) => e.stopPropagation()}>
             {/* Bilah jendela ala macOS: titik merah menutup jendela */}
             <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-hair bg-surface px-5 py-3.5">

@@ -19,7 +19,7 @@ export default function ThemeToggle() {
   function apply(next, save) {
     document.documentElement.classList.toggle('dark', next);
     const m = document.querySelector('meta[name="theme-color"]:not([media])') || document.head.appendChild(Object.assign(document.createElement('meta'), { name: 'theme-color' }));
-    m.setAttribute('content', next ? '#0a1110' : '#f4f5f4');
+    m.setAttribute('content', next ? '#150a0d' : '#e8edf4');
     if (save) { try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch {} }
     setDark(next);
   }

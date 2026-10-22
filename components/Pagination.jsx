@@ -29,7 +29,7 @@ export default function Pagination({ page, total, onChange }) {
               <span className="grid h-10 w-8 place-items-center text-muted" aria-hidden="true">…</span>
             ) : (
               <button onClick={() => onChange(n)} aria-label={`Halaman ${n}`} aria-current={n === page ? 'page' : undefined}
-                className={`grid h-10 min-w-10 place-items-center rounded-full px-3 text-sm font-medium transition-colors ${n === page ? 'bg-jade-800 text-white' : 'text-ink/80 hover:bg-ink/5'}`}>
+                className={`grid h-10 min-w-10 place-items-center rounded-full px-3 text-sm font-medium transition-colors ${n === page ? 'bg-ruby-800 text-white' : 'text-ink/80 hover:bg-ink/5'}`}>
                 {n}
               </button>
             )}
