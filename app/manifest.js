@@ -3,8 +3,8 @@ import { SITE } from '../lib/site';
 // Manifest PWA: situs bisa dipasang ke layar utama dan dibuka layar penuh seperti aplikasi.
 export default function manifest() {
   return {
-    name: SITE.judul,
-    short_name: SITE.nama,
+    name: SITE.pwa,
+    short_name: SITE.pwa,
     description: SITE.deskripsi,
     lang: 'id',
     start_url: '/',

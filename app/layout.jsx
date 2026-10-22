@@ -16,6 +16,8 @@ export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: SITE.judul, template: `%s | ${SITE.judul}` },
   description: SITE.deskripsi,
+  applicationName: SITE.pwa,
+  appleWebApp: { title: SITE.pwa, capable: true, statusBarStyle: 'default' },
   openGraph: {
     type: 'website',
     locale: 'id_ID',
