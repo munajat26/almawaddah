@@ -91,7 +91,7 @@ export default function Peserta() {
           {potong.map((p) => <KartuPeserta key={p.id} p={p} href={`/peserta/${p.id}`} />)}
         </div>
         {tampil.length > 0 && (
-          <p className="mt-6 text-center text-sm text-muted">Menampilkan {awal + 1}–{awal + potong.length} dari {tampil.length} peserta</p>
+          <p className="mt-6 text-center text-sm text-muted">Menampilkan {awal + 1} sampai {awal + potong.length} dari {tampil.length} peserta</p>
         )}
         <Pagination page={hal} total={totalHal} onChange={pindahHal} />
       </div>

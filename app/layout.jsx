@@ -14,16 +14,16 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: `${SITE.nama} — ${SITE.tagline}`, template: `%s — ${SITE.nama}` },
+  title: { default: SITE.judul, template: `%s | ${SITE.judul}` },
   description: SITE.deskripsi,
   openGraph: {
     type: 'website',
     locale: 'id_ID',
-    siteName: SITE.nama,
-    title: `${SITE.nama} — ${SITE.tagline}`,
+    siteName: SITE.judul,
+    title: SITE.judul,
     description: SITE.deskripsi,
   },
-  twitter: { card: 'summary', title: `${SITE.nama} — ${SITE.tagline}`, description: SITE.deskripsi },
+  twitter: { card: 'summary', title: SITE.judul, description: SITE.deskripsi },
 };
 export const viewport = {
   width: 'device-width',
