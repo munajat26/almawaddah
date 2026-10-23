@@ -4,7 +4,7 @@ import { api } from '../../lib/api';
 import { invalidate, peek, setCache } from '../../lib/cache';
 import { Alert, Segmented } from '../../components/ui';
 import Logo from '../../components/Logo';
-import { barisProfil } from '../../lib/profil';
+import { barisProfil, langkahForm } from '../../lib/profil';
 import { SITE } from '../../lib/site';
 
 const ST_P = ['Menunggu', 'Disetujui', 'Ditolak', 'Menikah'];
@@ -29,6 +29,8 @@ export default function Admin() {
   const [catatan, setCatatan] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [edit, setEdit] = useState(null); // salinan data peserta yang sedang diedit
+  const [hapus, setHapus] = useState(false); // tahap konfirmasi hapus
 
   const keluar = useCallback(() => { sessionStorage.removeItem('bj_token'); invalidate('admin'); setToken(null); setData(null); }, []);
   const muat = useCallback(async (t) => {
@@ -51,11 +53,34 @@ export default function Admin() {
 
   async function ubah(action, id, status, cat) {
     setBusy(true);
-    try { await api(action, { token, id, status, catatan: cat }); await muat(token); setSel(null); }
+    try { await api(action, { token, id, status, catatan: cat }); await muat(token); tutup(); }
     catch (e) { setErr(e.message); } finally { setBusy(false); }
   }
 
-  function buka(p) { setSel(p); setCatatan(p.catatan || ''); }
+  function buka(p) { setSel(p); setCatatan(p.catatan || ''); setEdit(null); setHapus(false); }
+  function tutup() { setSel(null); setEdit(null); setHapus(false); }
+  // Daftar bidang yang bisa diedit: sama dengan form pendaftaran, ditambah "salaf/mengaji".
+  const bidangEdit = (g) => [...langkahForm(g).flatMap((l) => l.bidang), { k: 'salaf', label: 'Salaf/mengaji', t: 'text', half: true }];
+
+  async function simpanEdit(e) {
+    e.preventDefault(); setBusy(true); setErr('');
+    try {
+      const data = {};
+      bidangEdit(sel.gender).forEach(({ k }) => { data[k] = edit[k] ?? ''; });
+      await api('adminEdit', { token, id: sel.id, data });
+      if (catatan !== (sel.catatan || '')) await api('adminUpdate', { token, id: sel.id, status: sel.verif, catatan });
+      invalidate('list'); invalidate('p:');
+      await muat(token); tutup();
+    } catch (x) { setErr(x.message); } finally { setBusy(false); }
+  }
+  async function hapusPeserta() {
+    setBusy(true); setErr('');
+    try {
+      await api('adminDelete', { token, id: sel.id });
+      invalidate('list'); invalidate('p:');
+      await muat(token); tutup();
+    } catch (x) { setErr(x.message); } finally { setBusy(false); }
+  }
 
   if (!token) {
     return (
@@ -158,17 +183,44 @@ export default function Admin() {
       )}
 
       {sel && (
-        <div className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-ruby-950/40 backdrop-blur-sm md:items-center md:p-4" role="dialog" aria-modal="true" onClick={() => setSel(null)}>
+        <div className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-ruby-950/40 backdrop-blur-sm md:items-center md:p-4" role="dialog" aria-modal="true" onClick={tutup}>
           <div className="sheet-up max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-t-[28px] bg-surface shadow-lift md:rounded-[28px]" onClick={(e) => e.stopPropagation()}>
             {/* Bilah jendela ala macOS: titik merah menutup jendela */}
             <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-hair bg-surface px-5 py-3.5">
-              <button onClick={() => setSel(null)} aria-label="Tutup" className="hidden h-3 w-3 rounded-full bg-[#ff5f57] ring-1 ring-black/10 md:block" />
+              <button onClick={tutup} aria-label="Tutup" className="hidden h-3 w-3 rounded-full bg-[#ff5f57] ring-1 ring-black/10 md:block" />
               <span className="hidden h-3 w-3 rounded-full bg-[#febc2e] ring-1 ring-black/10 md:block" aria-hidden="true" />
               <span className="hidden h-3 w-3 rounded-full bg-[#28c840] ring-1 ring-black/10 md:block" aria-hidden="true" />
               <span className="text-sm font-medium text-muted md:ml-3">{sel.id}</span>
-              <button onClick={() => setSel(null)} className="ml-auto h-9 px-2 text-sm font-semibold text-brand md:hidden">Tutup</button>
+              <button onClick={tutup} className="ml-auto h-9 px-2 text-sm font-semibold text-brand md:hidden">Tutup</button>
             </div>
             <div className="p-5 sm:p-7" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
+              {err && <div className="mb-4"><Alert>{err}</Alert></div>}
+              {edit ? (
+                <form onSubmit={simpanEdit}>
+                  <h2 className="text-2xl font-semibold tracking-[-0.03em]">Edit data peserta</h2>
+                  <p className="text-sm text-muted">{sel.gender}, kode {sel.id}</p>
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                    {bidangEdit(sel.gender).map((f) => {
+                      const v = edit[f.k] ?? '';
+                      const set = (x) => setEdit({ ...edit, [f.k]: x });
+                      const lebar = f.t === 'area' || f.t === 'check' || (!f.half && f.t !== 'select') ? 'sm:col-span-2' : f.half ? '' : 'sm:col-span-2';
+                      let input;
+                      if (f.t === 'area' || f.t === 'check') input = <textarea rows={f.t === 'check' ? 2 : 3} className="field-area" value={v} onChange={(e) => set(e.target.value)} />;
+                      else if (f.t === 'select') {
+                        const opsi = f.opsi.includes(v) || !v ? f.opsi : [...f.opsi, v]; // nilai lama dari form tetap bisa dipilih
+                        input = <select className="field" value={v} onChange={(e) => set(e.target.value)}><option value="">-</option>{opsi.map((o) => <option key={o} value={o}>{o}</option>)}</select>;
+                      } else input = <input className="field" type={f.t === 'date' ? 'date' : f.t === 'tel' ? 'tel' : 'text'} inputMode={f.t === 'number' ? 'numeric' : undefined} value={v} onChange={(e) => set(e.target.value)} />;
+                      return <label key={f.k} className={`block ${lebar}`}><span className="mb-2 block text-[13px] font-medium text-ink/80">{f.label}</span>{input}</label>;
+                    })}
+                  </div>
+                  <label className="mt-4 block"><span className="mb-2 block text-[13px] font-medium text-ink/80">Catatan admin</span>
+                    <textarea rows={2} className="field-area" value={catatan} onChange={(e) => setCatatan(e.target.value)} /></label>
+                  <div className="mt-6 grid gap-2 sm:flex">
+                    <button className="btn-primary !h-11 md:!h-10" disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan perubahan'}</button>
+                    <button type="button" className="btn-ghost !h-11 md:!h-10" disabled={busy} onClick={() => setEdit(null)}>Batal</button>
+                  </div>
+                </form>
+              ) : (<>
               <h2 className="text-2xl font-semibold tracking-[-0.03em]">{sel.nama}</h2>
               <p className="text-sm text-muted">{sel.gender}, mendaftar untuk: {sel.untuk || '-'}</p>
               <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-2">
@@ -193,6 +245,24 @@ export default function Admin() {
                   </button>
                 ))}
               </div>
+              <div className="mt-8 border-t border-hair pt-5">
+                {!hapus ? (
+                  <div className="grid gap-2 sm:flex sm:flex-wrap">
+                    <button className="btn-ghost !h-11 md:!h-10" disabled={busy} onClick={() => { setEdit({ ...sel }); setErr(''); }}>Edit data</button>
+                    <button className="btn-ghost !h-11 !text-rose-700 md:!h-10 dark:!text-rose-300" disabled={busy} onClick={() => setHapus(true)}>Hapus peserta</button>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl bg-rose-50 p-4 text-sm text-rose-900 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/25">
+                    <p className="font-semibold">Hapus {sel.nama} ({sel.id}) secara permanen?</p>
+                    <p className="mt-1">Baris di Google Sheet dan pengajuan ta’aruf yang terkait ikut terhapus. Tindakan ini tidak bisa dibatalkan.</p>
+                    <div className="mt-4 grid gap-2 sm:flex">
+                      <button className="btn !h-11 bg-rose-700 text-white hover:bg-rose-800 md:!h-10" disabled={busy} onClick={hapusPeserta}>{busy ? 'Menghapus…' : 'Ya, hapus'}</button>
+                      <button className="btn-ghost !h-11 md:!h-10" disabled={busy} onClick={() => setHapus(false)}>Batal</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              </>)}
             </div>
           </div>
         </div>

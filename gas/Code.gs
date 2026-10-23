@@ -267,6 +267,7 @@ function doPost(e) {
 const ROUTES = {
   list: list, get: get, register: register, taaruf: taaruf,
   adminLogin: adminLogin, adminList: adminList, adminUpdate: adminUpdate, adminTaaruf: adminTaaruf,
+  adminEdit: adminEdit, adminDelete: adminDelete,
 };
 
 /* ---------- inisialisasi (jalankan sekali dari editor) ---------- */
@@ -291,6 +292,19 @@ function diagnosa() {
       rows.filter(function (p) { return !p.kode; }).length + ' | tampil di situs ' + rows.filter(aktif_).length);
     Logger.log(g + ': status verifikasi ' + JSON.stringify(stat) + ' | kode ganda ' + JSON.stringify(ganda));
   });
+}
+// Dipanggil otomatis tiap ada kiriman Google Form: beri Kode dan status Menunggu pada baris baru,
+// sehingga langsung muncul di panel admin tanpa menunggu admin membukanya.
+function saatFormDikirim() {
+  withLock_(function () { lengkapi_('Ikhwan', 'Menunggu'); lengkapi_('Akhwat', 'Menunggu'); });
+}
+// Jalankan SEKALI dari editor untuk memasang pemicu "On form submit" pada spreadsheet jawaban.
+function pasangPemicu() {
+  const ids = {};
+  ['Ikhwan', 'Akhwat'].forEach(function (g) { const ss = ss_(g); ids[ss.getId()] = ss; });
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'saatFormDikirim') ScriptApp.deleteTrigger(t); });
+  Object.keys(ids).forEach(function (id) { ScriptApp.newTrigger('saatFormDikirim').forSpreadsheet(ids[id]).onFormSubmit().create(); });
+  Logger.log('Pemicu terpasang untuk ' + Object.keys(ids).length + ' spreadsheet.');
 }
 // Beri Kode dan status pada semua data lama.
 function migrasi() {
@@ -430,7 +444,8 @@ function adminList(b) {
     const o = Object.assign({}, p);
     o.id = p.kode;
     o.usia = usia_(p.tglLahir);
-    o.tglLahir = p.tglLahir instanceof Date ? Utilities.formatDate(p.tglLahir, Session.getScriptTimeZone(), 'yyyy-MM-dd') : String(p.tglLahir);
+    const d = parseDate_(p.tglLahir); // dinormalkan ke yyyy-MM-dd agar bisa diedit di <input type=date>
+    o.tglLahir = d ? Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd') : String(p.tglLahir);
     delete o._row; delete o.kode; delete o.waktu; delete o.nomor;
     return o;
   });
@@ -460,5 +475,62 @@ function adminTaaruf(b) {
     sh.getRange(t._row, TAARUF_HDR.indexOf('status') + 1).setValue(b.status);
     if (b.catatan != null) sh.getRange(t._row, TAARUF_HDR.indexOf('catatanAdmin') + 1).setValue(cl_(b.catatan, 500));
     return { ok: true };
+  });
+}
+
+
+// Ubah data peserta dari panel admin. Hanya kolom data pribadi yang boleh diubah
+// (Kode dan Status Verifikasi tidak lewat sini).
+const BATAS_EDIT = {
+  untuk: 40, nama: 80, wa: 20, tglLahir: 10, status: 60, tinggi: 5, berat: 5, suku: 40, domAsal: 80, domSekarang: 80,
+  salaf: 60, pendidikan: 60, pekerjaan: 100, penghasilan: 60, izin: 60, ciri: 500, unggul: 800, kurang: 800,
+  kegiatan: 300, ormas: 100, ustadz: 400, bedaPulau: 40, bedaProv: 40, bedaKab: 40, tinggal: 200, pasangan: 300, kriteria: 800,
+};
+function adminEdit(b) {
+  cekAdmin_(b.token);
+  const f = b.data || {};
+  return withLock_(function () {
+    const p = semua_().filter(function (x) { return x.kode === cl_(b.id).toUpperCase(); })[0];
+    if (!p) throw new Error('Peserta tidak ditemukan.');
+    const I = info_(p.gender);
+    if (f.nama != null && !cl_(f.nama)) throw new Error('Nama tidak boleh kosong.');
+    if (f.wa != null) {
+      const wa = digits_(f.wa);
+      if (wa.length < 9) throw new Error('Nomor WhatsApp tidak valid.');
+      if (semua_().some(function (x) { return x.kode !== p.kode && digits_(x.wa) === wa; })) throw new Error('Nomor WhatsApp ini dipakai peserta lain.');
+      f.wa = wa;
+    }
+    if (f.tglLahir != null && f.tglLahir !== '') {
+      const u = usia_(f.tglLahir);
+      if (u === '' || u < 18 || u > 80) throw new Error('Tanggal lahir tidak valid (usia minimal 18 tahun).');
+    }
+    if (f.tinggi != null && f.tinggi !== '' && !(Number(f.tinggi) >= 120 && Number(f.tinggi) <= 220)) throw new Error('Tinggi badan tidak wajar.');
+    if (f.berat != null && f.berat !== '' && !(Number(f.berat) >= 25 && Number(f.berat) <= 250)) throw new Error('Berat badan tidak wajar.');
+    let n = 0;
+    Object.keys(BATAS_EDIT).forEach(function (k) {
+      if (f[k] == null || I.col[k] == null || I.col[k] < 0) return;
+      const cell = I.sh.getRange(p._row, I.col[k] + 1);
+      cell.setNumberFormat('@'); // teks polos: WA tidak kehilangan 0 di depan, tanggal tidak berubah format
+      cell.setValue(cl_(f[k], BATAS_EDIT[k]));
+      n++;
+    });
+    return { ok: true, diubah: n };
+  });
+}
+
+// Hapus peserta: baris di sheet dihapus, begitu juga pengajuan ta'aruf yang menyangkut kodenya
+// (supaya kode yang dipakai ulang kelak tidak tersambung ke pengajuan lama).
+function adminDelete(b) {
+  cekAdmin_(b.token);
+  return withLock_(function () {
+    const kode = cl_(b.id).toUpperCase();
+    const p = semua_().filter(function (x) { return x.kode === kode; })[0];
+    if (!p) throw new Error('Peserta tidak ditemukan.');
+    info_(p.gender).sh.deleteRow(p._row);
+    delete INFO_[p.gender];
+    const sh = taarufSheet_();
+    const t = taarufRows_().filter(function (x) { return x.dari === kode || x.kepada === kode; });
+    t.sort(function (a, c) { return c._row - a._row; }).forEach(function (x) { sh.deleteRow(x._row); });
+    return { ok: true, taarufDihapus: t.length };
   });
 }
