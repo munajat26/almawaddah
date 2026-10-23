@@ -54,14 +54,14 @@ export default function Detail() {
       </div>
     );
   }
-  if (!p) return <div className="mx-auto max-w-5xl px-5 pb-16 pt-28 md:pt-36"><div className="h-96 animate-pulse rounded-[28px] bg-ink/[0.05]" /></div>;
+  if (!p) return <div className="mx-auto max-w-none px-5 sm:px-8 lg:px-12 2xl:px-16 pb-16 pt-28 md:pt-36"><div className="h-96 animate-pulse rounded-[28px] bg-ink/[0.05]" /></div>;
 
   return (
-    <div className="mx-auto max-w-5xl px-5 pb-16 pt-24 md:pb-24 md:pt-32">
+    <div className="mx-auto max-w-none px-5 sm:px-8 lg:px-12 2xl:px-16 pb-16 pt-24 md:pb-24 md:pt-32">
       {/* Header profil: menempel selama halaman digulir (induknya setinggi seluruh halaman, bukan hanya
           kolom artikel). Latarnya diperpanjang ke atas sampai ke tepi layar, jadi teks yang terangkat
           ke belakang navbar kaca ikut ter-blur dan tidak merusak tampilannya. */}
-      <div className="sticky z-30 -mx-5 flex items-center justify-between gap-3 bg-pearl/70 px-5 pb-3 backdrop-blur-2xl"
+      <div className="sticky z-30 -mx-5 sm:-mx-8 lg:-mx-12 2xl:-mx-16 flex items-center justify-between gap-3 bg-pearl/70 px-5 sm:px-8 lg:px-12 2xl:px-16 pb-3 backdrop-blur-2xl"
         style={{
           top: 0,
           marginTop: 'calc(-4.25rem - env(safe-area-inset-top))',

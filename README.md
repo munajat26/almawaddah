@@ -18,6 +18,10 @@ tetap bisa dipakai berdampingan: jawaban barunya otomatis muncul di panel admin 
    - `SHEET_IKHWAN` / `SHEET_AKHWAT`: nama tab jawaban (default `Ikhwan` dan `Akhwat`)
    - `API_KEY`: acak, panjang
    - `ADMIN_PASSWORD`: kata sandi panel admin
+   **Bila spreadsheet jawaban Form terpisah dari spreadsheet GAS**: isi `SS_SUMBER` (ID spreadsheet Form) dan
+   `SHEET_SUMBER_IKHWAN` / `SHEET_SUMBER_AKHWAT` (nama tab jawabannya). Baris baru disalin otomatis ke tab
+   Ikhwan/Akhwat di `SS_ID` (dicocokkan lewat nomor WA, jadi tidak dobel). Jalankan `sinkronSekarang()` untuk uji,
+   dan `pasangPemicu()` sekali agar penyalinan berjalan otomatis (saat Form dikirim dan tiap 10 menit).
 4. Jalankan `setup()` sekali (setujui izin Sheets). Fungsi ini menambah 3 kolom admin di ujung kanan tiap tab jawaban
    (`Kode`, `Status Verifikasi`, `Catatan Admin`) dan membuat tab `Taaruf`. Jika muncul galat
    "Header sheet ... tidak ditemukan untuk: ...", teks header di sheet berbeda dari yang ada di `Code.gs`

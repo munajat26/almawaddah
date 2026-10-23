@@ -77,6 +77,10 @@
 }
 
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+/* Layar sangat lebar (QHD/4K): seluruh antarmuka diperbesar proporsional (teks px tetap ikut), isi tetap memenuhi lebar layar */
+@media (min-width: 1920px) { html { zoom: 1.15; } }
+@media (min-width: 2560px) { html { zoom: 1.5; } }
+@media (min-width: 3200px) { html { zoom: 1.9; } }
 body {
   overflow-x: clip;
   -webkit-tap-highlight-color: transparent;

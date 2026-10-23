@@ -46,7 +46,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="relative mx-auto mt-14 grid max-w-5xl sm:mt-20 items-center gap-5 px-5 md:grid-cols-3">
+        <div className="relative mx-auto mt-14 grid max-w-none sm:mt-20 items-center gap-5 px-5 sm:px-8 lg:px-12 2xl:px-16 md:grid-cols-3">
           {CONTOH.map((c, idx) => (
             <div key={c.id} style={{ animationDelay: `${idx * 140}ms` }}
               className={`rise ${idx === 1 ? 'md:-translate-y-8 md:scale-[1.06]' : 'hidden md:block'}`}>
@@ -58,7 +58,7 @@ export default function Home() {
       </section>
 
       {/* Bento */}
-      <section className="mx-auto max-w-6xl px-5 py-16 sm:py-24">
+      <section className="mx-auto max-w-none px-5 sm:px-8 lg:px-12 2xl:px-16 py-16 sm:py-24">
         <h2 className="max-w-2xl text-3xl font-semibold leading-[1.08] tracking-[-0.035em] sm:text-5xl">Dirancang untuk menjaga adab dan privasi.</h2>
         <div className="mt-12 grid gap-4 md:grid-cols-6">
           <div className="relative overflow-hidden rounded-[32px] bg-ruby-950 p-8 text-white md:col-span-4 md:p-10 dark:ring-1 dark:ring-white/10">
@@ -101,7 +101,7 @@ export default function Home() {
       </section>
 
       {/* Alur: urutan nyata, jadi bernomor */}
-      <section className="mx-auto max-w-6xl px-5 pb-16 sm:pb-24">
+      <section className="mx-auto max-w-none px-5 sm:px-8 lg:px-12 2xl:px-16 pb-16 sm:pb-24">
         <h2 className="max-w-2xl text-3xl font-semibold leading-[1.08] tracking-[-0.035em] sm:text-5xl">Empat langkah menuju pertemuan.</h2>
         <ol className="mt-12 grid gap-4 md:grid-cols-4">
           {ALUR.map(([j, d], i) => (
@@ -145,7 +145,7 @@ export default function Home() {
       </section>
 
       {/* Ajakan */}
-      <section className="mx-auto max-w-6xl px-5 pb-16 sm:pb-24">
+      <section className="mx-auto max-w-none px-5 sm:px-8 lg:px-12 2xl:px-16 pb-16 sm:pb-24">
         <div className="relative overflow-hidden rounded-[32px] sm:rounded-[40px] bg-linear-to-br from-ruby-800 to-ruby-950 px-6 py-16 text-center text-white sm:py-20">
           <div className="pattern-gold fade-radial absolute inset-0 opacity-[0.18]" />
           <div className="relative">

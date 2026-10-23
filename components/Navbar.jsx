@@ -6,8 +6,8 @@ import { SITE } from '../lib/site';
 
 export default function Navbar() {
   return (
-    <header className="fixed inset-x-0 z-40 px-3" style={{ top: 'calc(0.5rem + env(safe-area-inset-top))' }}>
-      <div className="glass mx-auto flex h-14 max-w-5xl items-center justify-between rounded-full pl-3 pr-2">
+    <header className="fixed inset-x-0 z-40 px-3 sm:px-6 lg:px-10 2xl:px-14" style={{ top: 'calc(0.5rem + env(safe-area-inset-top))' }}>
+      <div className="glass flex h-14 w-full max-w-none items-center justify-between rounded-full pl-3 pr-2">
         <Link href="/" className="flex items-center gap-2.5">
           <Logo size={34} />
           <span className="flex flex-col leading-none">

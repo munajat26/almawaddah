@@ -48,14 +48,14 @@ export default function Peserta() {
   const potong = tampil.slice(awal, awal + perHal);
 
   return (
-    <div className="mx-auto max-w-6xl px-5 pb-16 pt-24 md:pb-24 md:pt-32">
+    <div className="mx-auto max-w-none px-5 sm:px-8 lg:px-12 2xl:px-16 pb-16 pt-24 md:pb-24 md:pt-32">
       <h1 className="text-3xl font-semibold tracking-[-0.04em] sm:text-5xl">Peserta ta’aruf</h1>
       <p className="mb-6 mt-3 max-w-xl text-base text-muted sm:text-lg md:mb-8">Hanya profil yang sudah diverifikasi admin. Identitas lengkap dibuka setelah kedua pihak sepakat.</p>
 
       {/* Filter menempel selama daftar digulir. Latarnya diperpanjang ke atas sampai tepi layar, jadi teks yang
           terangkat ke belakang navbar kaca ikut ter-blur dan tidak merusak tampilannya. Margin atas negatif
           menggeser latar ke atas; jarak ke paragraf di atasnya dijaga oleh mb pada paragraf (margin menyatu). */}
-      <div className="sticky z-30 -mx-5 flex flex-col gap-3 bg-pearl/70 px-5 pb-3 backdrop-blur-2xl sm:flex-row sm:items-center sm:justify-between"
+      <div className="sticky z-30 -mx-5 sm:-mx-8 lg:-mx-12 2xl:-mx-16 flex flex-col gap-3 bg-pearl/70 px-5 sm:px-8 lg:px-12 2xl:px-16 pb-3 backdrop-blur-2xl sm:flex-row sm:items-center sm:justify-between"
         style={{
           top: 0,
           marginTop: 'calc(-4.25rem - env(safe-area-inset-top))',
@@ -76,7 +76,7 @@ export default function Peserta() {
           </div>
         )}
         {!data && !error && (
-          <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 2xl:grid-cols-4 min-[2400px]:grid-cols-5">
             {[0, 1, 2].map((i) => <div key={i} className="h-60 animate-pulse rounded-[28px] bg-ink/[0.05]" />)}
           </div>
         )}
@@ -87,7 +87,7 @@ export default function Peserta() {
             <Link href="/daftar" className="btn-primary mt-6">Daftar sebagai peserta</Link>
           </div>
         )}
-        <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 2xl:grid-cols-4 min-[2400px]:grid-cols-5">
           {potong.map((p) => <KartuPeserta key={p.id} p={p} href={`/peserta/${p.id}`} />)}
         </div>
         {tampil.length > 0 && (

@@ -1,9 +1,12 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { invalidate, peek, setCache } from '../../lib/cache';
 import { Alert, Segmented } from '../../components/ui';
 import Logo from '../../components/Logo';
+import Pagination from '../../components/Pagination';
+import { Search } from '../../components/Icons';
 import { barisProfil, langkahForm } from '../../lib/profil';
 import { SITE } from '../../lib/site';
 
@@ -17,7 +20,7 @@ const WARNA = {
   Ditolak: 'bg-rose-50 text-rose-800 ring-rose-200 dark:bg-rose-400/10 dark:text-rose-300 dark:ring-rose-400/25',
   Menikah: 'bg-gold-200/60 text-gold-ink ring-gold-400/40 dark:bg-gold-400/15',
 };
-const Badge = ({ s }) => <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${WARNA[s] || ''}`}>{s}</span>;
+const Badge = ({ s }) => <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${WARNA[s] || ''}`}>{s}</span>;
 
 export default function Admin() {
   const [token, setToken] = useState(null);
@@ -29,6 +32,9 @@ export default function Admin() {
   const [catatan, setCatatan] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [q, setQ] = useState('');
+  const [gen, setGen] = useState('');
+  const [page, setPage] = useState(1);
   const [edit, setEdit] = useState(null); // salinan data peserta yang sedang diedit
   const [hapus, setHapus] = useState(false); // tahap konfirmasi hapus
 
@@ -82,6 +88,20 @@ export default function Admin() {
     } catch (x) { setErr(x.message); } finally { setBusy(false); }
   }
 
+  const peserta = data?.peserta || [];
+  const taaruf = data?.taaruf || [];
+  const PER_HAL = 10;
+  const rows = useMemo(() => {
+    const k = q.trim().toLowerCase();
+    return peserta.filter((p) => (!filter || p.verif === filter) && (!gen || p.gender === gen) &&
+      (!k || `${p.id} ${p.nama} ${p.wa} ${p.domSekarang} ${p.domAsal} ${p.suku} ${p.pekerjaan} ${p.pendidikan}`.toLowerCase().includes(k)));
+  }, [peserta, filter, gen, q]);
+  const totalHal = Math.max(1, Math.ceil(rows.length / PER_HAL));
+  const hal = Math.min(page, totalHal);
+  const awal = (hal - 1) * PER_HAL;
+  const potong = rows.slice(awal, awal + PER_HAL);
+  const ganti = (set) => (v) => { set(v); setPage(1); };
+
   if (!token) {
     return (
       <div className="relative flex min-h-[80dvh] items-center justify-center px-5 pb-16 pt-24 md:pt-28">
@@ -99,67 +119,93 @@ export default function Admin() {
     );
   }
 
-  const peserta = data?.peserta || [];
-  const taaruf = data?.taaruf || [];
   const nama = (id) => peserta.find((p) => p.id === id)?.nama || id;
   const hitung = (s) => peserta.filter((p) => p.verif === s).length;
-  const rows = peserta.filter((p) => !filter || p.verif === filter);
 
   return (
-    <div className="mx-auto max-w-6xl px-5 pb-16 pt-24 md:pb-24 md:pt-32">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Panel admin</h1>
+    <div className="mx-auto max-w-none px-4 pb-16 pt-20 sm:px-8 lg:px-12 2xl:px-16 md:pb-20 md:pt-24">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">Panel admin</h1>
+          <span className="hidden text-sm text-muted sm:inline">{peserta.length} peserta terdata</span>
+        </div>
         <div className="flex gap-2">
-          <button className="btn-ghost !h-11 md:!h-10" onClick={() => muat(token)}>Segarkan</button>
-          <button className="btn-ghost !h-11 md:!h-10" onClick={keluar}>Keluar</button>
+          <button className="btn-ghost !h-9 !px-4 !text-sm" onClick={() => muat(token)}>Segarkan</button>
+          <button className="btn-ghost !h-9 !px-4 !text-sm" onClick={keluar}>Keluar</button>
         </div>
       </div>
-      {err && <div className="mt-4"><Alert>{err}</Alert></div>}
+      {err && !sel && <div className="mt-3"><Alert>{err}</Alert></div>}
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:mt-8 md:grid-cols-4">
-        {[['Menunggu verifikasi', hitung('Menunggu')], ['Peserta aktif', hitung('Disetujui')], ['Ta’aruf berjalan', taaruf.filter((t) => t.status === 'Menunggu' || t.status === 'Diproses').length], ['Menikah', hitung('Menikah')]].map(([k, v]) => (
-          <div key={k} className="panel p-5 sm:p-6">
-            <p className="text-3xl font-semibold sm:text-4xl tracking-[-0.04em] text-brand-strong">{v}</p>
-            <p className="mt-1 text-sm text-muted">{k}</p>
-          </div>
+      {/* Ringkasan: kartu bisa diklik untuk memfilter */}
+      <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3">
+        {[['Menunggu verifikasi', hitung('Menunggu'), 'Menunggu'], ['Peserta aktif', hitung('Disetujui'), 'Disetujui'], ['Ta’aruf berjalan', taaruf.filter((t) => t.status === 'Menunggu' || t.status === 'Diproses').length, null], ['Menikah', hitung('Menikah'), 'Menikah']].map(([k, v, f]) => (
+          <button key={k} type="button" disabled={!f} onClick={() => { setTab('peserta'); ganti(setFilter)(f); }}
+            className={`panel flex items-baseline justify-between gap-2 !rounded-2xl px-4 py-3 text-left ${f ? 'transition-transform active:scale-[0.99] md:hover:-translate-y-0.5' : 'cursor-default'} ${f && f === filter && tab === 'peserta' ? 'ring-2 ring-brand/50' : ''}`}>
+            <span className="text-sm text-muted">{k}</span>
+            <span className="text-2xl font-semibold tracking-[-0.03em] text-brand-strong">{v}</span>
+          </button>
         ))}
       </div>
 
-      <div className="mt-10"><Segmented value={tab} onChange={setTab} options={[['peserta', 'Peserta'], ['taaruf', 'Pengajuan ta’aruf']]} /></div>
+      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-hair pb-4">
+        <Segmented value={tab} onChange={setTab} options={[['peserta', 'Peserta'], ['taaruf', 'Pengajuan ta’aruf']]} />
+        {tab === 'peserta' && (
+          <div className="relative min-w-[14rem] flex-1 sm:max-w-md">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            <input type="search" enterKeyHint="search" className="field !h-10 !pl-10 !text-sm" placeholder="Cari kode, nama, WA, kota, suku" aria-label="Cari peserta"
+              value={q} onChange={(e) => ganti(setQ)(e.target.value)} />
+          </div>
+        )}
+      </div>
 
       {tab === 'peserta' && (<>
-        <div className="mt-5"><Segmented value={filter} onChange={setFilter} options={[['', 'Semua'], ...ST_P.map((s) => [s, s])]} /></div>
-        <div className="mt-5 space-y-3 md:hidden">
-          {rows.map((p) => (
-            <button key={p.id} onClick={() => buka(p)} className="panel flex w-full items-center justify-between gap-3 p-4 text-left active:scale-[0.99]">
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Segmented value={filter} onChange={ganti(setFilter)} options={[['', `Semua ${peserta.length}`], ...ST_P.map((s) => [s, `${s} ${hitung(s)}`])]} />
+          <Segmented value={gen} onChange={ganti(setGen)} options={[['', 'Semua'], ['Ikhwan', 'Ikhwan'], ['Akhwat', 'Akhwat']]} />
+          {(q || filter !== 'Menunggu' || gen) && (
+            <button className="text-sm font-semibold text-brand hover:underline" onClick={() => { setQ(''); setGen(''); setFilter('Menunggu'); setPage(1); }}>Atur ulang filter</button>
+          )}
+        </div>
+
+        {/* Layar kecil: kartu ringkas */}
+        <div className="mt-3 space-y-2 md:hidden">
+          {potong.map((p) => (
+            <button key={p.id} onClick={() => buka(p)} className="panel flex w-full items-center justify-between gap-3 !rounded-2xl px-4 py-3 text-left active:scale-[0.99]">
               <div className="min-w-0">
-                <p className="truncate font-medium">{p.nama} <span className="font-normal text-muted">({p.gender})</span></p>
-                <p className="mt-0.5 truncate text-sm text-muted"><span className="font-mono text-xs">{p.id}</span> · {p.usia === '' ? '-' : p.usia}, {p.domSekarang}</p>
+                <p className="truncate text-[15px] font-medium">{p.nama} <span className="font-normal text-muted">({p.gender})</span></p>
+                <p className="mt-0.5 truncate text-xs text-muted"><span className="font-mono">{p.id}</span> · {p.usia === '' ? '-' : p.usia} th · {p.domSekarang || '-'}</p>
               </div>
               <Badge s={p.verif} />
             </button>
           ))}
-          {!rows.length && <div className="panel p-8 text-center text-muted">Tidak ada data pada status ini.</div>}
+          {!rows.length && <div className="panel p-8 text-center text-muted">Tidak ada peserta yang cocok.</div>}
         </div>
-        <div className="panel mt-5 hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[660px] text-left text-sm">
-            <thead className="text-muted"><tr className="border-b border-hair">
-              <th className="px-6 py-4 font-medium">Kode</th><th className="px-6 py-4 font-medium">Nama</th><th className="px-6 py-4 font-medium">Usia, kota</th><th className="px-6 py-4 font-medium">Verifikasi</th><th className="px-6 py-4" />
+
+        {/* Layar lebar: tabel padat */}
+        <div className="panel mt-3 hidden overflow-x-auto !rounded-2xl md:block">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="text-xs uppercase tracking-wide text-muted"><tr className="border-b border-hair">
+              <th className="px-4 py-2.5 font-medium">Kode</th><th className="px-4 py-2.5 font-medium">Nama</th><th className="px-4 py-2.5 font-medium">Usia</th>
+              <th className="px-4 py-2.5 font-medium">Domisili</th><th className="px-4 py-2.5 font-medium">WhatsApp</th><th className="px-4 py-2.5 font-medium">Verifikasi</th><th className="px-4 py-2.5" />
             </tr></thead>
             <tbody>
-              {rows.map((p) => (
-                <tr key={p.id} className="border-b border-hair last:border-0 hover:bg-brand-soft">
-                  <td className="px-6 py-4 font-mono text-xs text-muted">{p.id}</td>
-                  <td className="px-6 py-4 font-medium">{p.nama} <span className="font-normal text-muted">({p.gender})</span></td>
-                  <td className="px-6 py-4">{p.usia === '' ? '-' : p.usia}, {p.domSekarang}</td>
-                  <td className="px-6 py-4"><Badge s={p.verif} /></td>
-                  <td className="px-6 py-4 text-right"><button className="font-semibold text-brand hover:underline" onClick={() => buka(p)}>Periksa</button></td>
+              {potong.map((p) => (
+                <tr key={p.id} className="cursor-pointer border-b border-hair last:border-0 hover:bg-brand-soft" onClick={() => buka(p)}>
+                  <td className="px-4 py-2 font-mono text-xs text-muted">{p.id}</td>
+                  <td className="px-4 py-2 font-medium">{p.nama} <span className="font-normal text-muted">({p.gender === 'Ikhwan' ? 'I' : 'A'})</span></td>
+                  <td className="px-4 py-2">{p.usia === '' ? '-' : p.usia}</td>
+                  <td className="px-4 py-2">{p.domSekarang || '-'}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-muted">{p.wa || '-'}</td>
+                  <td className="px-4 py-2"><Badge s={p.verif} /></td>
+                  <td className="px-4 py-2 text-right"><button className="font-semibold text-brand hover:underline" onClick={(e) => { e.stopPropagation(); buka(p); }}>Periksa</button></td>
                 </tr>
               ))}
-              {!rows.length && <tr><td colSpan={5} className="p-10 text-center text-muted">Tidak ada data pada status ini.</td></tr>}
+              {!rows.length && <tr><td colSpan={7} className="p-10 text-center text-muted">Tidak ada peserta yang cocok.</td></tr>}
             </tbody>
           </table>
         </div>
+        {rows.length > 0 && <p className="mt-3 text-center text-xs text-muted">Menampilkan {awal + 1} sampai {awal + potong.length} dari {rows.length} peserta</p>}
+        <div className="-mt-4"><Pagination page={hal} total={totalHal} onChange={setPage} /></div>
       </>)}
 
       {tab === 'taaruf' && (
@@ -182,8 +228,8 @@ export default function Admin() {
         </div>
       )}
 
-      {sel && (
-        <div className="fade-in fixed inset-0 z-50 flex items-end justify-center bg-ruby-950/40 backdrop-blur-sm md:items-center md:p-4" role="dialog" aria-modal="true" onClick={tutup}>
+      {sel && createPortal(
+        <div className="fade-in fixed inset-0 z-[60] flex items-end justify-center bg-ruby-950/40 backdrop-blur-sm md:items-center md:p-4" role="dialog" aria-modal="true" onClick={tutup}>
           <div className="sheet-up max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-t-[28px] bg-surface shadow-lift md:rounded-[28px]" onClick={(e) => e.stopPropagation()}>
             {/* Bilah jendela ala macOS: titik merah menutup jendela */}
             <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-hair bg-surface px-5 py-3.5">
@@ -265,8 +311,7 @@ export default function Admin() {
               </>)}
             </div>
           </div>
-        </div>
-      )}
+        </div>, document.body)}
     </div>
   );
 }

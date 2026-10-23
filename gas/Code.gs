@@ -12,6 +12,9 @@
  *   SS_ID_AKHWAT    : (opsional) ID spreadsheet jawaban Google Form akhwat, bila terpisah
  *   SHEET_IKHWAN    : nama tab data ikhwan   (default: Ikhwan)
  *   SHEET_AKHWAT    : nama tab data akhwat   (default: Akhwat)
+ *   SS_SUMBER       : (opsional) ID spreadsheet tujuan jawaban Google Form. Baris barunya DISALIN otomatis
+ *                     ke tab Ikhwan/Akhwat di SS_ID (data yang sudah ada tidak diduplikasi, dicocokkan lewat nomor WA)
+ *   SHEET_SUMBER_IKHWAN / SHEET_SUMBER_AKHWAT : nama tab jawaban Form di SS_SUMBER (mis. "DATA IKHWAN")
  *   API_KEY         : kunci acak panjang, sama dengan GAS_API_KEY di Next.js
  *   ADMIN_PASSWORD  : kata sandi panel admin
  *
@@ -249,6 +252,79 @@ function cekAdmin_(token) {
   if (!token || !CacheService.getScriptCache().get('adm_' + token)) throw new Error('Sesi admin berakhir. Silakan masuk lagi.');
 }
 
+
+/* ---------- sinkron dari spreadsheet jawaban Google Form (SS_SUMBER) ---------- */
+function sumberSheet_(g) {
+  const id = prop_('SS_SUMBER');
+  const nama = prop_(g === 'Ikhwan' ? 'SHEET_SUMBER_IKHWAN' : 'SHEET_SUMBER_AKHWAT');
+  if (!id || !nama) return null;
+  const sh = SpreadsheetApp.openById(id).getSheetByName(nama);
+  if (!sh) throw new Error('Tab sumber "' + nama + '" tidak ditemukan di SS_SUMBER.');
+  return sh;
+}
+// Kunci pencocokan baris: nomor WA tanpa 0/62 di depan; bila WA kosong, nama + tanggal lahir.
+function kunciBaris_(wa, nama, tgl) {
+  const d = digits_(wa).replace(/^62/, '').replace(/^0+/, '');
+  return d.length >= 8 ? 'w' + d : 'n' + norm_(nama) + norm_(tgl instanceof Date ? tgl.toISOString() : tgl);
+}
+// Salin baris baru dari sumber ke tab lokal. Mengembalikan jumlah baris yang ditambahkan.
+function sinkron_(g) {
+  const src = sumberSheet_(g);
+  if (!src) return 0;
+  const last = src.getLastRow(), lastCol = src.getLastColumn();
+  if (last < 2 || lastCol < 1) return 0;
+  const sv = src.getRange(1, 1, last, lastCol).getValues();
+  const sh = sv.shift().map(String);
+  const peta = {};
+  Object.keys(HEADER[g]).forEach(function (k) { peta[k] = cari_(sh, HEADER[g][k]); });
+  const alt = [];
+  sh.forEach(function (h, i) { if (norm_(h).indexOf('namalengkap') === 0 && i !== peta.nama) alt.push(i); });
+  const S = { col: { nama: peta.nama, namaAlt: alt, wa: peta.wa, tglLahir: peta.tglLahir } };
+  let ts = sh.map(norm_).indexOf('timestamp');
+  if (ts < 0) ts = sh.map(norm_).indexOf('capwaktu');
+
+  const I = info_(g);
+  const ada = {};
+  rows_(g).forEach(function (p) { ada[kunciBaris_(p.wa, p.nama, p.tglLahir)] = true; });
+
+  const baru = [];
+  sv.forEach(function (r) {
+    if (!barisIsi_(S, r)) return;
+    const nama = namaBaris_(S, r);
+    const k = kunciBaris_(peta.wa >= 0 ? r[peta.wa] : '', nama, peta.tglLahir >= 0 ? r[peta.tglLahir] : '');
+    if (ada[k]) return;
+    ada[k] = true;
+    const b = new Array(I.headers.length).fill('');
+    Object.keys(peta).forEach(function (key) {
+      if (peta[key] < 0 || I.col[key] == null || I.col[key] < 0) return;
+      let v = r[peta[key]];
+      if (key === 'wa') v = digits_(v);
+      b[I.col[key]] = v;
+    });
+    if (I.col.nama >= 0 && !String(b[I.col.nama]).trim()) b[I.col.nama] = nama; // nama dari kolom cadangan
+    if (I.col.waktu >= 0 && ts >= 0) b[I.col.waktu] = r[ts];
+    baru.push(b);
+  });
+  if (!baru.length) return 0;
+  const mulai = I.sh.getLastRow() + 1;
+  const rg = I.sh.getRange(mulai, 1, baru.length, I.headers.length);
+  rg.setNumberFormat('@'); // teks polos: WA tidak kehilangan 0 di depan
+  rg.setValues(baru);
+  if (I.col.waktu >= 0) I.sh.getRange(mulai, I.col.waktu + 1, baru.length, 1).setNumberFormat('yyyy-mm-dd hh:mm:ss');
+  return baru.length;
+}
+// Sinkron kedua gender lalu beri Kode dan status Menunggu pada baris baru.
+function sinkronSemua_() {
+  const a = sinkron_('Ikhwan'), b = sinkron_('Akhwat');
+  lengkapi_('Ikhwan', 'Menunggu'); lengkapi_('Akhwat', 'Menunggu');
+  return { ikhwan: a, akhwat: b };
+}
+// Jalankan manual dari editor: lihat View > Logs.
+function sinkronSekarang() {
+  const r = withLock_(sinkronSemua_);
+  Logger.log('Baris baru disalin: Ikhwan ' + r.ikhwan + ', Akhwat ' + r.akhwat);
+}
+
 /* ---------- entry point ---------- */
 function doGet() { return json_({ ok: true, data: 'Biro Jodoh API aktif' }); }
 
@@ -287,6 +363,10 @@ function diagnosa() {
       const k = p.verif || '(kosong)'; stat[k] = (stat[k] || 0) + 1;
       if (p.kode) kodeCt[p.kode] = (kodeCt[p.kode] || 0) + 1;
     });
+    const dilewati = [];
+    v.forEach(function (r, i) { if (!barisIsi_(I, r)) dilewati.push(i + 2); });
+    Logger.log(g + ': baris sheet yang dilewati (kosong): ' + (dilewati.length ? dilewati.slice(0, 40).join(', ') : 'tidak ada') +
+      ' | kolom terbaca: nama=' + I.col.nama + ', wa=' + I.col.wa + ', kode=' + I.col.kode + ', verif=' + I.col.verif + ' dari ' + I.headers.length + ' kolom');
     const ganda = Object.keys(kodeCt).filter(function (k) { return kodeCt[k] > 1; });
     Logger.log(g + ': baris di sheet ' + v.length + ' | terbaca ' + rows.length + ' | tanpa Kode ' +
       rows.filter(function (p) { return !p.kode; }).length + ' | tampil di situs ' + rows.filter(aktif_).length);
@@ -296,15 +376,32 @@ function diagnosa() {
 // Dipanggil otomatis tiap ada kiriman Google Form: beri Kode dan status Menunggu pada baris baru,
 // sehingga langsung muncul di panel admin tanpa menunggu admin membukanya.
 function saatFormDikirim() {
-  withLock_(function () { lengkapi_('Ikhwan', 'Menunggu'); lengkapi_('Akhwat', 'Menunggu'); });
+  withLock_(sinkronSemua_);
 }
 // Jalankan SEKALI dari editor untuk memasang pemicu "On form submit" pada spreadsheet jawaban.
 function pasangPemicu() {
   const ids = {};
   ['Ikhwan', 'Akhwat'].forEach(function (g) { const ss = ss_(g); ids[ss.getId()] = ss; });
+  if (prop_('SS_SUMBER')) { const sm = SpreadsheetApp.openById(prop_('SS_SUMBER')); ids[sm.getId()] = sm; }
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'saatFormDikirim') ScriptApp.deleteTrigger(t); });
   Object.keys(ids).forEach(function (id) { ScriptApp.newTrigger('saatFormDikirim').forSpreadsheet(ids[id]).onFormSubmit().create(); });
+  ScriptApp.newTrigger('saatFormDikirim').timeBased().everyMinutes(10).create(); // cadangan bila pemicu form terlewat
   Logger.log('Pemicu terpasang untuk ' + Object.keys(ids).length + ' spreadsheet.');
+}
+// Daftar semua tab di spreadsheet yang dipakai, supaya terlihat tab mana yang dibaca web dan tab mana
+// yang sebenarnya menerima jawaban Google Form (jalankan lalu buka View > Logs).
+function daftarTab() {
+  const dilihat = {};
+  ['Ikhwan', 'Akhwat'].forEach(function (g) {
+    const ss = ss_(g), id = ss.getId();
+    Logger.log(g + ' dibaca dari spreadsheet "' + ss.getName() + '" (' + id + '), tab "' + info_(g).sh.getName() + '"');
+    if (dilihat[id]) return; dilihat[id] = true;
+    ss.getSheets().forEach(function (sh) {
+      const h = sh.getLastColumn() ? sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(norm_) : [];
+      const form = h.some(function (x) { return x.indexOf('namalengkap') === 0; });
+      Logger.log('  tab "' + sh.getName() + '": ' + Math.max(0, sh.getLastRow() - 1) + ' baris data' + (form ? ' [kolom Nama Lengkap ada]' : ''));
+    });
+  });
 }
 // Beri Kode dan status pada semua data lama.
 function migrasi() {
@@ -379,6 +476,7 @@ function register(b) {
   };
 
   return withLock_(function () {
+    sinkron_(g); // pastikan jawaban Form terbaru ikut diperiksa untuk cek nomor ganda
     if (semua_().some(function (p) { return digits_(p.wa) === nilai.wa; })) throw new Error('Nomor WhatsApp ini sudah terdaftar.');
     lengkapi_(g, 'Menunggu'); // pastikan baris lain dari Google Form sudah punya kode
     const I = info_(g);
@@ -439,7 +537,7 @@ function adminLogin(b) {
 
 function adminList(b) {
   cekAdmin_(b.token);
-  withLock_(function () { lengkapi_('Ikhwan', 'Menunggu'); lengkapi_('Akhwat', 'Menunggu'); }); // kiriman Google Form baru
+  withLock_(sinkronSemua_); // salin kiriman Google Form baru dari SS_SUMBER, beri Kode dan status
   const peserta = semua_().map(function (p) {
     const o = Object.assign({}, p);
     o.id = p.kode;
